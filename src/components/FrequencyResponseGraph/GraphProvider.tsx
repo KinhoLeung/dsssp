@@ -12,10 +12,14 @@ import {
 type GraphContextProps = {
   width: number
   height: number
+  outerWidth: number
+  outerHeight: number
+  padding: GraphTheme['background']['padding']
   theme: GraphTheme
   scale: GraphScale
   logScale: LogScaleFunction
   svgRef: React.RefObject<SVGSVGElement>
+  clipPathId: string
 }
 
 export const GraphContext = createContext<GraphContextProps | undefined>(
@@ -29,7 +33,11 @@ export const GraphProvider = ({
   logScale,
   height,
   width,
-  theme
+  outerHeight,
+  outerWidth,
+  theme,
+  padding,
+  clipPathId
 }: {
   children: React.ReactNode
   svgRef: React.RefObject<SVGSVGElement>
@@ -37,7 +45,11 @@ export const GraphProvider = ({
   scale: GraphScale
   height: number
   width: number
+  outerHeight: number
+  outerWidth: number
+  padding: GraphTheme['background']['padding']
   logScale: LogScaleFunction
+  clipPathId: string
 }) => {
   // Memoize theme and scale separately to catch actual value changes
   const memoizedTheme = useMemo(() => theme, [JSON.stringify(theme)])
@@ -51,9 +63,24 @@ export const GraphProvider = ({
       scale: memoizedScale,
       logScale,
       height,
-      width
+      width,
+      outerHeight,
+      outerWidth,
+      padding,
+      clipPathId
     }),
-    [svgRef, memoizedTheme, memoizedScale, logScale, height, width]
+    [
+      svgRef,
+      memoizedTheme,
+      memoizedScale,
+      logScale,
+      height,
+      width,
+      outerHeight,
+      outerWidth,
+      padding,
+      clipPathId
+    ]
   )
 
   return (

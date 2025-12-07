@@ -2,6 +2,7 @@ import { type GraphTheme } from './types'
 
 export const defaultTheme: GraphTheme = {
   background: {
+    padding: { top: 12, right: 12, bottom: 20, left: 36 },
     // background grid lines
     grid: {
       dotted: false,

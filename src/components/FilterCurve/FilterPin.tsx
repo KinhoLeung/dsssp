@@ -24,7 +24,7 @@ export const FilterPin = ({
   color
 }: FilterPinProps) => {
   const { scale, height, logScale } = useGraph()
-  const { minGain, maxGain, sampleRate } = scale
+  const { minGain, maxGain, displayMinGain, displayMaxGain, sampleRate } = scale
   const { freq, type } = filter
   let { gain, q } = filter
   const zeroGain = getZeroGain(type)
@@ -51,15 +51,25 @@ export const FilterPin = ({
     pass2UpFlag = true
   }
 
+  const gainMinForDisplay =
+    typeof displayMinGain === 'number' ? displayMinGain : minGain
+  const gainMaxForDisplay =
+    typeof displayMaxGain === 'number' ? displayMaxGain : maxGain
+
   let pointY = pointRadius || 0
   if (pass1FilterType || pass2FilterType) {
-    pointY += getCenterLine(minGain, maxGain, height)
+    pointY += getCenterLine(gainMinForDisplay, gainMaxForDisplay, height)
   } else {
-    pointY += scaleMagnitude(gain, minGain, maxGain, height)
+    pointY += scaleMagnitude(gain, gainMinForDisplay, gainMaxForDisplay, height)
   }
 
   const centerMagnitude = calcMagnitudeForFrequency(vars, freq, sampleRate)
-  const magnitudeY = scaleMagnitude(centerMagnitude, minGain, maxGain, height)
+  const magnitudeY = scaleMagnitude(
+    centerMagnitude,
+    gainMinForDisplay,
+    gainMaxForDisplay,
+    height
+  )
   const deltaX = pointY > magnitudeY
   const x = logScale.x(freq)
 

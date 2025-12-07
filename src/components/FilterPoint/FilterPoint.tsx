@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-import { useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 
 import {
   calcFrequency,
@@ -10,12 +10,7 @@ import {
   stripTail
 } from '../../math'
 import { type GraphFilter } from '../../types'
-import {
-  getIconStyles,
-  getIconSymbol,
-  getPointerPosition,
-  getZeroGain
-} from '../../utils'
+import { getIconStyles, getIconSymbol, getZeroGain } from '../../utils'
 import { useGraph } from '../..'
 
 import '../../icons/font.css'
@@ -50,6 +45,26 @@ export type FilterPointProps = {
    * @default true
    */
   wheelQ?: boolean
+  /**
+   * Minimum Q value allowed when scrolling
+   * @default scale.minQ || 0.1
+   */
+  minQ?: number
+  /**
+   * Maximum Q value allowed when scrolling
+   * @default scale.maxQ || 25
+   */
+  maxQ?: number
+  /**
+   * Decimal precision for gain when dragging
+   * @default scale.gainPrecision || 1
+   */
+  gainPrecision?: number
+  /**
+   * Decimal precision for Q when scrolling
+   * @default scale.qPrecision || 1
+   */
+  qPrecision?: number
   /**
    * Point radius in pixels
    * @default theme.point.radius
@@ -197,6 +212,10 @@ export const FilterPoint = ({
   dragX = true,
   dragY = true,
   wheelQ = true,
+  minQ,
+  maxQ,
+  gainPrecision,
+  qPrecision,
   active = false, // manual `hovered` state
   showIcon = false,
   label = '',
@@ -233,12 +252,52 @@ export const FilterPoint = ({
     logScale,
     height,
     width,
+    padding,
     theme: {
       filters: { zeroPoint, colors, defaultColor, point }
     }
   } = useGraph()
-  const { minGain, maxGain, minFreq, maxFreq } = scale
+  const {
+    minGain,
+    maxGain,
+    gainPrecision: scaleGainPrecision,
+    minQ: scaleMinQ,
+    maxQ: scaleMaxQ,
+    qPrecision: scaleQPrecision,
+    displayMinGain,
+    displayMaxGain,
+    minFreq,
+    maxFreq,
+    displayMinFreq,
+    displayMaxFreq
+  } = scale
+  const gainMinForDisplay =
+    typeof displayMinGain === 'number' ? displayMinGain : minGain
+  const gainMaxForDisplay =
+    typeof displayMaxGain === 'number' ? displayMaxGain : maxGain
+  const domainMinFreq =
+    displayMinFreq && displayMinFreq > 0 ? displayMinFreq : minFreq
+  const domainMaxFreq =
+    displayMaxFreq && displayMaxFreq > domainMinFreq ? displayMaxFreq : maxFreq
+  const minX = Math.max(0, Math.min(logScale.x(minFreq), width))
+  const maxX = Math.max(0, Math.min(logScale.x(maxFreq), width))
+  const maxGainY = scaleMagnitude(
+    maxGain,
+    gainMinForDisplay,
+    gainMaxForDisplay,
+    height
+  )
+  const minGainY = scaleMagnitude(
+    minGain,
+    gainMinForDisplay,
+    gainMaxForDisplay,
+    height
+  )
+  const minY = Math.min(maxGainY, minGainY)
+  const maxY = Math.max(maxGainY, minGainY)
   const { freq: filterFreq, gain: filterGain, q: filterQ, type } = filter
+  const gainDecimals = gainPrecision ?? scaleGainPrecision ?? 1
+  const qDecimals = qPrecision ?? scaleQPrecision ?? 1
 
   const circleRef = useRef<SVGCircleElement | null>(null)
   const labelRef = useRef<SVGTextElement | null>(null)
@@ -251,10 +310,10 @@ export const FilterPoint = ({
     [type]
   )
 
-  const x = logScale.x(filterFreq)
-  const centerY = getCenterLine(minGain, maxGain, height)
+  const x = limitRange(logScale.x(filterFreq), minX, maxX)
+  const centerY = getCenterLine(gainMinForDisplay, gainMaxForDisplay, height)
   const y = !passFilter
-    ? scaleMagnitude(filterGain, minGain, maxGain, height)
+    ? scaleMagnitude(filterGain, gainMinForDisplay, gainMaxForDisplay, height)
     : centerY
 
   let offset: { x: number; y: number } = { x: 0, y: 0 }
@@ -264,35 +323,57 @@ export const FilterPoint = ({
   const moveFreq = useRef(filterFreq)
   const moveGain = useRef(filterGain)
 
+  const getGraphPointer = (e: MouseEvent | TouchEvent) => {
+    const svg = svgRef.current
+    const CTM = svg?.getScreenCTM()
+    const clientX = 'touches' in e ? e.touches[0]!.clientX : e.clientX
+    const clientY = 'touches' in e ? e.touches[0]!.clientY : e.clientY
+    if (!CTM) return { x: clientX, y: clientY }
+
+    return {
+      x: (clientX - CTM.e) / CTM.a - padding.left,
+      y: (clientY - CTM.f) / CTM.d - padding.top
+    }
+  }
+
   const dragMove = (e: MouseEvent | TouchEvent) => {
     e.preventDefault() // Prevent scrolling on touch
     e.stopPropagation()
     if (!circleRef.current) return
-    const svgBounds = svgRef.current?.getBoundingClientRect()
-    if (!svgBounds) return
 
-    const { x, y } = getPointerPosition(e)
-    const offsetX = x - (svgBounds.left ?? 0)
-    const offsetY = y - (svgBounds.top ?? 0)
+    const { x, y } = getGraphPointer(e)
 
     if (dragX) {
-      cx = limitRange(offsetX - offset.x, 0, width)
+      cx = limitRange(x - offset.x, minX, maxX)
       circleRef.current.setAttributeNS(null, 'cx', String(cx))
       labelRef.current?.setAttributeNS(null, 'x', String(cx))
       moveFreq.current = stripTail(
-        limitRange(calcFrequency(cx, width, minFreq, maxFreq), minFreq, maxFreq)
+        limitRange(
+          calcFrequency(cx, width, domainMinFreq, domainMaxFreq),
+          minFreq,
+          maxFreq
+        )
       )
     }
     if (dragY) {
       if (zeroGain) {
         cy = centerY
       } else {
-        cy = limitRange(offsetY - offset.y, 0, height)
+        cy = limitRange(y - offset.y, minY, maxY)
       }
       circleRef.current.setAttributeNS(null, 'cy', String(cy))
       labelRef.current?.setAttributeNS(null, 'y', String(cy))
-      const gain = stripTail(calcMagnitude(cy, minGain, maxGain, height))
-      moveGain.current = gain < 0.05 && gain > -0.05 ? 0 : gain
+      const gain = calcMagnitude(
+        cy,
+        gainMinForDisplay,
+        gainMaxForDisplay,
+        height
+      )
+      const limitedGain = limitRange(gain, minGain, maxGain)
+      moveGain.current =
+        limitedGain < 0.05 && limitedGain > -0.05
+          ? 0
+          : stripTail(limitedGain, gainDecimals)
     }
 
     onChange?.({
@@ -348,13 +429,11 @@ export const FilterPoint = ({
     if (!svg || !circleEl) return
 
     setDragging(true)
-    const svgBounds = svg.getBoundingClientRect()
-    const { x, y } = getPointerPosition(e)
-    const { left, top } = svgBounds
+    const { x, y } = getGraphPointer(e)
 
     offset = {
-      x: x - left - parseFloat(circleEl.getAttributeNS(null, 'cx') || '0'),
-      y: y - top - parseFloat(circleEl.getAttributeNS(null, 'cy') || '0')
+      x: x - parseFloat(circleEl.getAttributeNS(null, 'cx') || '0'),
+      y: y - parseFloat(circleEl.getAttributeNS(null, 'cy') || '0')
     }
 
     circleEl.setAttribute(
@@ -382,15 +461,36 @@ export const FilterPoint = ({
     onLeave?.({ ...filter, index })
   }
 
-  const scrollQ = (e: WheelEvent) => {
-    e.preventDefault()
-    let newQ = filterQ
-    newQ += e.deltaY > 0 ? 0.1 : -0.1
-    newQ = stripTail(limitRange(newQ, 0.1, 20))
-    onChange?.({ index, ...filter, q: newQ, ended: true })
-  }
+  useEffect(() => {
+    const circle = circleRef.current
+    if (!wheelQ || !circle) return
 
-  if (wheelQ) circleRef.current?.addEventListener('wheel', scrollQ)
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      let newQ = filterQ
+      newQ += e.deltaY > 0 ? 0.1 : -0.1
+      const minAllowedQ = Math.max(0.0001, minQ ?? scaleMinQ ?? 0.1)
+      const maxAllowedQ = maxQ ?? scaleMaxQ ?? 25
+      newQ = stripTail(limitRange(newQ, minAllowedQ, maxAllowedQ), qDecimals)
+      onChange?.({ index, ...filter, q: newQ, ended: true })
+    }
+
+    circle.addEventListener('wheel', handleWheel, { passive: false })
+    return () => {
+      circle.removeEventListener('wheel', handleWheel)
+    }
+  }, [
+    wheelQ,
+    filterQ,
+    minQ,
+    maxQ,
+    scaleMinQ,
+    scaleMaxQ,
+    qDecimals,
+    index,
+    filter,
+    onChange
+  ])
 
   if (type === 'BYPASS') return null
 

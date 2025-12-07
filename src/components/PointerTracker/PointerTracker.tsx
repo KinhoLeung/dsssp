@@ -27,7 +27,7 @@ export type PointerTrackerProps = {
   backgroundColor?: CSSProperties['color']
   /**
    * Number of decimal places for gain value display
-   * @default 1
+   * @default scale.gainPrecision || 1
    */
   gainPrecision?: number
 }
@@ -41,13 +41,14 @@ export const PointerTracker = ({
   lineColor,
   labelColor,
   backgroundColor,
-  gainPrecision = 1
+  gainPrecision
 }: PointerTrackerProps) => {
   const {
     svgRef,
     width,
     height,
-    scale: { minGain, maxGain, minFreq, maxFreq },
+    padding,
+    scale,
     theme: {
       background: {
         tracker,
@@ -55,6 +56,26 @@ export const PointerTracker = ({
       }
     }
   } = useGraph()
+
+  const {
+    minGain,
+    maxGain,
+    displayMinGain,
+    displayMaxGain,
+    minFreq,
+    maxFreq,
+    displayMinFreq,
+    displayMaxFreq
+  } = scale
+  const gainMinForDisplay =
+    typeof displayMinGain === 'number' ? displayMinGain : minGain
+  const gainMaxForDisplay =
+    typeof displayMaxGain === 'number' ? displayMaxGain : maxGain
+  const gainDigits = gainPrecision ?? scale.gainPrecision ?? 1
+  const domainMinFreq =
+    displayMinFreq && displayMinFreq > 0 ? displayMinFreq : minFreq
+  const domainMaxFreq =
+    displayMaxFreq && displayMaxFreq > domainMinFreq ? displayMaxFreq : maxFreq
 
   const color = labelColor || tracker.labelColor
   const fillColor = backgroundColor || tracker.backgroundColor
@@ -77,16 +98,23 @@ export const PointerTracker = ({
   const mouseMove = (e: MouseEvent | TouchEvent) => {
     e.preventDefault() // Prevent scrolling on touch
     const { x, y } = getPointerPosition(e)
-    setMouse({ x, y })
+    const plotX = Math.min(Math.max(x - padding.left, 0), width)
+    const plotY = Math.min(Math.max(y - padding.top, 0), height)
+    setMouse({ x: plotX, y: plotY })
 
-    const newGain = calcMagnitude(y, minGain, maxGain, height).toFixed(
-      gainPrecision
-    )
+    const newGain = calcMagnitude(
+      plotY,
+      gainMinForDisplay,
+      gainMaxForDisplay,
+      height
+    ).toFixed(gainDigits)
     if (newGain !== String(gainLabel)) {
       setGainLabel(Number(newGain))
     }
 
-    const newFreq = fastFloor(calcFrequency(x, width, minFreq, maxFreq))
+    const newFreq = fastFloor(
+      calcFrequency(plotX, width, domainMinFreq, domainMaxFreq)
+    )
     if (newFreq !== freqLabel) {
       setFreqLabel(newFreq)
     }

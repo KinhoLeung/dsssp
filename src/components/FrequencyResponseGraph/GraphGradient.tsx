@@ -29,6 +29,11 @@ export const directions = {
 
 export const GraphGradient = () => {
   const {
+    width,
+    height,
+    outerWidth,
+    outerHeight,
+    padding,
     theme: {
       background: {
         gradient: { start, stop, direction },
@@ -57,18 +62,25 @@ export const GraphGradient = () => {
         />
       </linearGradient>
       <rect
+        x={-padding.left}
+        y={-padding.top}
+        width={outerWidth}
+        height={outerHeight}
+        fill={`url(#${id})`}
+      />
+      <rect
         x="0"
         y="0"
-        width="100%"
-        height="100%"
+        width={width}
+        height={height}
         fill={`url(#${id})`}
       />
       {Boolean(borderWidth) && (
         <rect
           x={borderWidth / 2}
           y={borderWidth / 2}
-          width={`calc(100% - ${borderWidth}px)`}
-          height={`calc(100% - ${borderWidth}px)`}
+          width={Math.max(width - borderWidth, 0)}
+          height={Math.max(height - borderWidth, 0)}
           fill="none"
           stroke={lineColor}
           strokeWidth={borderWidth}

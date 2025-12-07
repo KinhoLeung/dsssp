@@ -12,7 +12,10 @@ import {
 
 export const fastFloor = (x: number) => x >> 0
 export const fastRound = (x: number) => (x + (x > 0 ? 0.5 : -0.5)) >> 0
-export const stripTail = (x: number) => fastRound(x * 100) / 100
+export const stripTail = (x: number, decimals = 2) => {
+  const power = 10 ** decimals
+  return fastRound(x * power) / power
+}
 
 export const getLogScaleFn = (
   minFreq: number,
@@ -367,13 +370,24 @@ export const scaleMagnitudes = (
   width: number,
   height: number
 ) => {
-  const { minGain, maxGain } = scale
+  const { minGain, maxGain, displayMinGain, displayMaxGain } = scale
+  const gainMinForDisplay =
+    typeof displayMinGain === 'number' ? displayMinGain : minGain
+  const gainMaxForDisplay =
+    typeof displayMaxGain === 'number' ? displayMaxGain : maxGain
   const length = magnitudes.length - 1 // may be needed here
 
   return magnitudes.map((mag, i) => {
     return {
       x: fastRound((width / length) * i),
-      y: stripTail(scaleMagnitude(mag.magnitude, minGain, maxGain, height))
+      y: stripTail(
+        scaleMagnitude(
+          mag.magnitude,
+          gainMinForDisplay,
+          gainMaxForDisplay,
+          height
+        )
+      )
     } as GraphPoint
   })
 }
@@ -384,8 +398,12 @@ export const plotCurve = (
   width: number,
   height: number
 ) => {
-  const { minGain, maxGain } = scale
-  const centerY = getCenterLine(minGain, maxGain, height)
+  const { minGain, maxGain, displayMinGain, displayMaxGain } = scale
+  const gainMinForDisplay =
+    typeof displayMinGain === 'number' ? displayMinGain : minGain
+  const gainMaxForDisplay =
+    typeof displayMaxGain === 'number' ? displayMaxGain : maxGain
+  const centerY = getCenterLine(gainMinForDisplay, gainMaxForDisplay, height)
   let path = `M -200 ${centerY}`
   points.map((point) => {
     path += ` L ${point.x} ${point.y > height + 2 ? height + 2 : point.y}`
@@ -408,9 +426,19 @@ export const calcFilterMagnitudes = (
   width: number,
   precisionDivider = 2
 ) => {
-  const { minFreq, maxFreq, sampleRate } = scale
+  const { minFreq, maxFreq, displayMinFreq, displayMaxFreq, sampleRate } = scale
+  const domainMinFreq =
+    displayMinFreq && displayMinFreq > 0 ? displayMinFreq : minFreq
+  const domainMaxFreq =
+    displayMaxFreq && displayMaxFreq > domainMinFreq ? displayMaxFreq : maxFreq
   const steps = width / precisionDivider
-  const magnitudes = calcMagnitudes(vars, steps, minFreq, maxFreq, sampleRate)
+  const magnitudes = calcMagnitudes(
+    vars,
+    steps,
+    domainMinFreq,
+    domainMaxFreq,
+    sampleRate
+  )
   return magnitudes
 }
 

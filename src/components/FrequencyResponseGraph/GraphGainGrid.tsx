@@ -1,12 +1,23 @@
 import React from 'react'
 
-import { getCenterLine } from '../../math'
+import { getCenterLine, scaleMagnitude } from '../../math'
 import { useGraph } from '.'
 
 export const GraphGainGrid = () => {
   const {
     height,
-    scale: { minGain, maxGain, dbSteps, dbLabels },
+    width,
+    padding,
+    scale: {
+      minGain,
+      maxGain,
+      displayMinGain,
+      displayMaxGain,
+      dbSteps,
+      dbLabels,
+      dbLabelSteps,
+      showDbUnitLabel
+    },
     theme: {
       background: {
         grid: { dotted, lineColor, lineWidth },
@@ -18,6 +29,15 @@ export const GraphGainGrid = () => {
   if (!dbSteps) return null
 
   const steps = dbSteps || maxGain // default to maxGain if not provided, showing only the center line
+  const labelEvery =
+    dbLabelSteps && dbLabelSteps > 0
+      ? Math.max(1, Math.round(dbLabelSteps / steps))
+      : 1
+
+  const gainMinForDisplay =
+    typeof displayMinGain === 'number' ? displayMinGain : minGain
+  const gainMaxForDisplay =
+    typeof displayMaxGain === 'number' ? displayMaxGain : maxGain
 
   const dBs = Array.from(
     { length: (maxGain - minGain) / steps + 1 },
@@ -26,36 +46,44 @@ export const GraphGainGrid = () => {
     }
   )
 
-  const centerY = getCenterLine(minGain, maxGain, height)
+  const centerY = getCenterLine(gainMinForDisplay, gainMaxForDisplay, height)
   const strokeDasharray = '1,2'
+  const gainLabelX = 4 - padding.left
+  const unitLabelY = -padding.top / 2
 
   return (
     <>
-      {dBs.slice(0, -1).map((tick, index) => {
-        if (index === 0) return null
-        const tickY = `${(index / (dBs.length - 1)) * 100}%`
+      {dBs.map((tick, index) => {
+        const tickY = scaleMagnitude(
+          tick,
+          gainMinForDisplay,
+          gainMaxForDisplay,
+          height
+        )
         const tickLabel = tick > 0 ? `+${tick}` : tick
+
+        const showLabel = dbLabels && index % labelEvery === 0
 
         return (
           <React.Fragment key={tick}>
             <line
               x1="0"
-              x2="100%"
+              x2={width}
               y1={tickY}
               y2={tickY}
               stroke={lineColor}
               strokeWidth={lineWidth.minor}
               {...(dotted ? { strokeDasharray } : {})}
             />
-            {dbLabels && index !== 0 && index !== dBs.length - 1 && (
+            {showLabel && (
               <text
-                x={3}
+                x={gainLabelX}
                 y={tickY}
                 fill={labelColor}
                 fontSize={fontSize}
                 fontFamily={fontFamily}
                 textAnchor="start"
-                transform="translate(0 -3)"
+                dominantBaseline="middle"
               >
                 {tickLabel}
               </text>
@@ -66,20 +94,21 @@ export const GraphGainGrid = () => {
       <line
         id="centerLine"
         x1="0"
-        x2="100%"
+        x2={width}
         y1={centerY}
         y2={centerY}
         stroke={lineColor}
         strokeWidth={lineWidth.center}
         {...(dotted ? { strokeDasharray } : {})}
       />
-      {dbLabels && (
+      {showDbUnitLabel !== false && dbLabels && (
         <text
-          y={12}
-          x={5}
+          y={unitLabelY}
+          x={gainLabelX}
           fill={labelColor}
           fontSize={fontSize}
           fontFamily={fontFamily}
+          dominantBaseline="middle"
         >
           dB
         </text>

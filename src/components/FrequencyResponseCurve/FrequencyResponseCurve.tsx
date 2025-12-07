@@ -38,7 +38,8 @@ export const FrequencyResponseCurve = ({
     scale,
     width,
     height,
-    theme: { curve }
+    theme: { curve },
+    clipPathId
   } = useGraph()
 
   const curveColor = color || curve.color
@@ -78,6 +79,7 @@ export const FrequencyResponseCurve = ({
       strokeWidth={curveWidth}
       strokeOpacity={curveOpacity}
       strokeLinecap="round"
+      clipPath={`url(#${clipPathId})`}
       {...(dotted ? { strokeDasharray: '1,3' } : {})}
       fill={gradientId ? `url(#${gradientId})` : 'none'}
       className={className}

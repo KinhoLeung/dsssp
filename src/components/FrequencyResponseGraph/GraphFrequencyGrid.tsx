@@ -4,7 +4,8 @@ export const GraphFrequencyGrid = () => {
   const {
     height,
     logScale,
-    scale: { octaveLabels, octaveTicks, majorTicks },
+    padding,
+    scale: { octaveLabels, octaveTicks, majorTicks, frequencyTicks },
     theme: {
       background: {
         grid: { dotted, lineColor, lineWidth },
@@ -13,12 +14,13 @@ export const GraphFrequencyGrid = () => {
     }
   } = useGraph()
 
-  const ticks = octaveTicks ? logScale.ticks(octaveTicks) : [0, 0]
+  const autoTicks = octaveTicks ? logScale.ticks(octaveTicks) : []
+  const ticks = frequencyTicks?.length ? frequencyTicks : autoTicks
   const strokeDasharray = '1,2'
 
   return (
     <>
-      {ticks.slice(1, -1).map((tick) => {
+      {(frequencyTicks?.length ? ticks : ticks.slice(1, -1)).map((tick) => {
         const tickX = logScale.x(tick)
 
         const width = majorTicks.includes(tick)
@@ -31,7 +33,7 @@ export const GraphFrequencyGrid = () => {
             x1={tickX}
             x2={tickX}
             y1="0"
-            y2="100%"
+            y2={height}
             stroke={lineColor}
             strokeWidth={width}
             {...(dotted ? { strokeDasharray } : {})}
@@ -44,9 +46,9 @@ export const GraphFrequencyGrid = () => {
         return (
           <text
             key={octave}
-            y={height - 4}
-            x={octaveX + (octave > 10_000 ? -4 : 4)}
-            textAnchor={octave > 10_000 ? 'end' : 'start'}
+            y={height + padding.bottom - 4}
+            x={octaveX}
+            textAnchor="middle"
             fill={labelColor}
             fontSize={fontSize}
             fontFamily={fontFamily}

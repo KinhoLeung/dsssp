@@ -57,14 +57,58 @@ export type GraphFilter = {
 }
 
 export type GraphScale = {
-  sampleRate: number
   minFreq: number
   maxFreq: number
+  /**
+   * Optional frequency range used only for display/logarithmic scaling.
+   * If not provided, `minFreq`/`maxFreq` are used.
+   * Can be wider than the actual filter range to provide visual padding.
+   */
+  displayMinFreq?: number
+  displayMaxFreq?: number
+  sampleRate: number
   minGain: number
   maxGain: number
+  /**
+   * Minimum and maximum Q values allowed when adjusting filters.
+   * Used by interactive controls (e.g., FilterPoint wheel).
+   */
+  minQ?: number
+  maxQ?: number
+  /**
+   * Optional gain range used only for display/vertical scaling.
+   * If not provided, `minGain`/`maxGain` are used.
+   * Can be wider than the actual gain limits to provide visual padding.
+   */
+  displayMinGain?: number
+  displayMaxGain?: number
+  /**
+   * Decimal precision used for gain values (e.g., dragging points, trackers).
+   */
+  gainPrecision?: number
+  /**
+   * Decimal precision used for Q values (e.g., scrolling to adjust Q).
+   */
+  qPrecision?: number
   dbSteps: number
   dbLabels: boolean
+  /**
+   * Optional step size (in dB) between gain labels.
+   * If not provided, uses `dbSteps`, so labels and grid lines share the same spacing.
+   */
+  dbLabelSteps?: number
+  /**
+   * Controls display of the "dB" unit label
+   * in the top-left corner of the gain axis.
+   * Defaults to true when omitted.
+   */
+  showDbUnitLabel?: boolean
   octaveTicks: number
+  /**
+   * Optional explicit frequency grid line positions in Hz.
+   * When provided, overrides auto-generated ticks from `octaveTicks`.
+   */
+  frequencyTicks?: number[]
   majorTicks: number[]
   octaveLabels: number[]
 }
@@ -96,6 +140,12 @@ export type GraphTheme = {
         center: number
         border: number
       }
+    }
+    padding: {
+      top: number
+      right: number
+      bottom: number
+      left: number
     }
     gradient: {
       start: CSSProperties['color']

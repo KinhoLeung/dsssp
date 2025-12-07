@@ -92,13 +92,30 @@ export const FrequencyResponseGraph = forwardRef<
   const mergedScale: GraphScale = merge(defaultScale, scale, {
     arrayMerge: (_, source) => source // overwrite arrays
   })
+  const {
+    background: { padding }
+  } = mergedTheme
 
-  const { minFreq, maxFreq } = mergedScale
-  const logScale = getLogScaleFn(minFreq, maxFreq, width)
+  const { minFreq, maxFreq, displayMinFreq, displayMaxFreq } = mergedScale
+
+  const logMinFreq =
+    displayMinFreq && displayMinFreq > 0 ? displayMinFreq : minFreq
+  const logMaxFreq =
+    displayMaxFreq && displayMaxFreq > logMinFreq ? displayMaxFreq : maxFreq
+
+  const graphWidth = Math.max(width - padding.left - padding.right, 0)
+  const graphHeight = Math.max(height - padding.top - padding.bottom, 0)
+
+  const logScale = getLogScaleFn(logMinFreq, logMaxFreq, graphWidth)
 
   FrequencyResponseGraph.displayName = 'FrequencyResponseGraph'
 
+  const outerWidth = width
+  const outerHeight = height
+  const graphTransform = `translate(${padding.left}, ${padding.top})`
+
   const graphId = `frequency-response-graph-${String(Math.random()).slice(2, 9)}`
+  const clipPathId = `${graphId}-clip`
   const resetStyles = `
   #${graphId} * {
     pointer-events: none;
@@ -109,29 +126,45 @@ export const FrequencyResponseGraph = forwardRef<
       ref={ref}
       id={graphId}
       className={className}
-      viewBox={`0 0 ${width} ${height}`}
+      viewBox={`0 0 ${outerWidth} ${outerHeight}`}
       style={{
-        width,
-        height,
+        width: outerWidth,
+        height: outerHeight,
         position: 'relative',
         verticalAlign: 'middle',
         userSelect: 'none',
         ...style
       }}
     >
-      <style>{resetStyles}</style>
+      <defs>
+        <style>{resetStyles}</style>
+        <clipPath id={clipPathId}>
+          <rect
+            x="0"
+            y="0"
+            width={graphWidth}
+            height={graphHeight}
+          />
+        </clipPath>
+      </defs>
       <GraphProvider
         svgRef={ref}
-        width={width}
-        height={height}
+        width={graphWidth}
+        height={graphHeight}
+        outerWidth={outerWidth}
+        outerHeight={outerHeight}
+        padding={padding}
         theme={mergedTheme}
         scale={mergedScale}
         logScale={logScale}
+        clipPathId={clipPathId}
       >
-        <GraphGradient />
-        <GraphGainGrid />
-        <GraphFrequencyGrid />
-        {children}
+        <g transform={graphTransform}>
+          <GraphGradient />
+          <GraphGainGrid />
+          <GraphFrequencyGrid />
+          {children}
+        </g>
       </GraphProvider>
     </svg>
   )
