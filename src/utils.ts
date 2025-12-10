@@ -2,7 +2,15 @@ import type { CSSProperties } from 'react'
 import { type FilterType } from './types'
 
 export const getPointerPosition = (e: MouseEvent | TouchEvent) => {
-  const CTM = (e.target as SVGGraphicsElement).getScreenCTM()
+  // Always resolve to the root SVG to avoid offsets when events originate from child nodes
+  const eventTarget =
+    (e.currentTarget as SVGGraphicsElement | null) ||
+    (e.target as SVGGraphicsElement | null)
+  const svgElement =
+    eventTarget?.ownerSVGElement ||
+    (eventTarget as SVGSVGElement | null) ||
+    null
+  const CTM = svgElement?.getScreenCTM()
   const clientX = 'touches' in e ? e.touches[0]!.clientX : e.clientX
   const clientY = 'touches' in e ? e.touches[0]!.clientY : e.clientY
 

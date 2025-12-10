@@ -55,6 +55,7 @@ const meta: Meta<typeof FilterPoint> = {
     onChange: { action: 'onChange' },
     onEnter: { action: 'onEnter' },
     onLeave: { action: 'onLeave' },
+    onDoubleClick: { action: 'onDoubleClick' },
     onDrag: { action: 'onDrag' }
   }
 }

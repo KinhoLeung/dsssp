@@ -1,7 +1,9 @@
 import { CSSProperties } from 'react';
 import { GraphFilter } from '../../types';
-export type FilterChangeEvent = GraphFilter & {
+export type FilterPointEvent = GraphFilter & {
     index: number;
+};
+export type FilterChangeEvent = FilterPointEvent & {
     ended?: boolean;
 };
 export type FilterPointProps = {
@@ -161,12 +163,17 @@ export type FilterPointProps = {
      * Called when mouse enters the point
      * @param filterEvent Current filter parameters with index
      */
-    onEnter?: (filterEvent: FilterChangeEvent) => void;
+    onEnter?: (filterEvent: FilterPointEvent) => void;
     /**
      * Called when mouse leaves the point
      * @param filterEvent Current filter parameters with index
      */
-    onLeave?: (filterEvent: FilterChangeEvent) => void;
+    onLeave?: (filterEvent: FilterPointEvent) => void;
+    /**
+     * Called when the point is double-clicked
+     * @param filterEvent Current filter parameters with index
+     */
+    onDoubleClick?: (filterEvent: FilterPointEvent) => void;
     /**
      * Called when drag state changes
      * @param dragState True when dragging starts, false when it ends
@@ -186,5 +193,5 @@ export type FilterPointProps = {
  * Uses `defaultColor` from the theme as a fallback when filter colors are not specified.
  *
  */
-export declare const FilterPoint: ({ filter, index, dragX, dragY, wheelQ, minQ, maxQ, gainPrecision, qPrecision, active, showIcon, label, labelFontSize, labelFontFamily, labelColor, radius, lineWidth, color, zeroColor, dragColor, activeColor, background, zeroBackground, dragBackground, activeBackground, backgroundOpacity, dragBackgroundOpacity, activeBackgroundOpacity, className, style, onChange, onEnter, onLeave, onDrag }: FilterPointProps) => import("react/jsx-runtime").JSX.Element | null;
+export declare const FilterPoint: ({ filter, index, dragX, dragY, wheelQ, minQ, maxQ, gainPrecision, qPrecision, active, showIcon, label, labelFontSize, labelFontFamily, labelColor, radius, lineWidth, color, zeroColor, dragColor, activeColor, background, zeroBackground, dragBackground, activeBackground, backgroundOpacity, dragBackgroundOpacity, activeBackgroundOpacity, className, style, onChange, onEnter, onLeave, onDoubleClick, onDrag }: FilterPointProps) => import("react/jsx-runtime").JSX.Element | null;
 //# sourceMappingURL=FilterPoint.d.ts.map

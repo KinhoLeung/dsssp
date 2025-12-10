@@ -1046,7 +1046,9 @@ const calcCompositeMagnitudes = (magnitudes) => {
 const limitRange = (value, min, max) => Math.min(Math.max(value, min), max);
 
 const getPointerPosition = (e) => {
-  const CTM = e.target.getScreenCTM();
+  const eventTarget = e.currentTarget || e.target;
+  const svgElement = eventTarget?.ownerSVGElement || eventTarget || null;
+  const CTM = svgElement?.getScreenCTM();
   const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
   const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
   if (!CTM) {
@@ -1551,6 +1553,7 @@ const FilterPoint = ({
   onChange,
   onEnter,
   onLeave,
+  onDoubleClick,
   onDrag
 }) => {
   const {
@@ -1617,6 +1620,17 @@ const FilterPoint = ({
   let cy;
   const moveFreq = useRef(filterFreq);
   const moveGain = useRef(filterGain);
+  const qDragStartX = useRef(0);
+  const qDragLastX = useRef(0);
+  const qDragCurrent = useRef(filterQ);
+  const qDragValue = useRef(filterQ);
+  const qDragChanged = useRef(false);
+  useEffect(() => {
+    moveFreq.current = filterFreq;
+    moveGain.current = filterGain;
+    qDragCurrent.current = filterQ;
+    qDragValue.current = filterQ;
+  }, [filterFreq, filterGain, filterQ]);
   const getGraphPointer = (e) => {
     const svg = svgRef.current;
     const CTM = svg?.getScreenCTM();
@@ -1627,6 +1641,55 @@ const FilterPoint = ({
       x: (clientX - CTM.e) / CTM.a - padding.left,
       y: (clientY - CTM.f) / CTM.d - padding.top
     };
+  };
+  const startQDrag = (e) => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    qDragChanged.current = false;
+    qDragCurrent.current = filterQ;
+    qDragValue.current = filterQ;
+    const { x: x2 } = getGraphPointer(e);
+    qDragStartX.current = x2;
+    qDragLastX.current = x2;
+    svg.addEventListener("mousemove", qDragMove);
+    svg.addEventListener("mouseup", qDragEnd);
+    svg.addEventListener("mouseleave", qDragEnd);
+  };
+  const qDragMove = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const svg = svgRef.current;
+    if (!svg) return;
+    const { x: x2 } = getGraphPointer(e);
+    const deltaX = x2 - qDragLastX.current;
+    qDragLastX.current = x2;
+    const minAllowedQ = Math.max(1e-4, minQ ?? scaleMinQ ?? 0.1);
+    const maxAllowedQ = maxQ ?? scaleMaxQ ?? 25;
+    const deltaQ = (maxAllowedQ - minAllowedQ) * deltaX / Math.max(width, 1);
+    qDragCurrent.current = limitRange(
+      qDragCurrent.current + deltaQ,
+      minAllowedQ,
+      maxAllowedQ
+    );
+    const nextQ = stripTail(
+      qDragCurrent.current,
+      qDecimals
+    );
+    if (nextQ === qDragValue.current) return;
+    qDragChanged.current = true;
+    qDragValue.current = nextQ;
+    onChange?.({ index, ...filter, q: nextQ });
+  };
+  const qDragEnd = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const svg = svgRef.current;
+    if (!svg) return;
+    svg.removeEventListener("mousemove", qDragMove);
+    svg.removeEventListener("mouseup", qDragEnd);
+    svg.removeEventListener("mouseleave", qDragEnd);
+    if (!qDragChanged.current) return;
+    onChange?.({ index, ...filter, q: qDragValue.current, ended: true });
   };
   const dragMove = (e) => {
     e.preventDefault();
@@ -1701,6 +1764,10 @@ const FilterPoint = ({
   const dragStart = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if ("button" in e && e.button === 2) {
+      startQDrag(e);
+      return;
+    }
     const svg = svgRef.current;
     const circleEl = circleRef.current;
     if (!svg || !circleEl) return;
@@ -1729,6 +1796,10 @@ const FilterPoint = ({
   const handleMouseLeave = () => {
     setHovered(false);
     onLeave?.({ ...filter, index });
+  };
+  const handleDoubleClick = (e) => {
+    e.stopPropagation();
+    onDoubleClick?.({ ...filter, index });
   };
   useEffect(() => {
     const circle = circleRef.current;
@@ -1793,7 +1864,9 @@ const FilterPoint = ({
         onMouseEnter: handleMouseEnter,
         onMouseLeave: handleMouseLeave,
         onMouseDown: (e) => dragStart(e),
+        onContextMenu: (e) => e.preventDefault(),
         onTouchStart: (e) => dragStart(e),
+        onDoubleClick: handleDoubleClick,
         style: { cursor: "pointer", pointerEvents: "auto", ...style },
         className
       }
@@ -1810,6 +1883,7 @@ const FilterPoint = ({
         fontSize: labelFontSize,
         fontFamily: labelFontFamily,
         style: { ...labelStyle },
+        onDoubleClick: handleDoubleClick,
         dangerouslySetInnerHTML: { __html: label }
       }
     )

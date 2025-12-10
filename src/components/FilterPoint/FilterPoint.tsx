@@ -1,5 +1,12 @@
 /* eslint-disable no-param-reassign */
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent
+} from 'react'
 
 import {
   calcFrequency,
@@ -15,8 +22,11 @@ import { useGraph } from '../..'
 
 import '../../icons/font.css'
 
-export type FilterChangeEvent = GraphFilter & {
+export type FilterPointEvent = GraphFilter & {
   index: number
+}
+
+export type FilterChangeEvent = FilterPointEvent & {
   ended?: boolean
 }
 
@@ -180,12 +190,17 @@ export type FilterPointProps = {
    * Called when mouse enters the point
    * @param filterEvent Current filter parameters with index
    */
-  onEnter?: (filterEvent: FilterChangeEvent) => void
+  onEnter?: (filterEvent: FilterPointEvent) => void
   /**
    * Called when mouse leaves the point
    * @param filterEvent Current filter parameters with index
    */
-  onLeave?: (filterEvent: FilterChangeEvent) => void
+  onLeave?: (filterEvent: FilterPointEvent) => void
+  /**
+   * Called when the point is double-clicked
+   * @param filterEvent Current filter parameters with index
+   */
+  onDoubleClick?: (filterEvent: FilterPointEvent) => void
   /**
    * Called when drag state changes
    * @param dragState True when dragging starts, false when it ends
@@ -244,6 +259,7 @@ export const FilterPoint = ({
   onChange,
   onEnter,
   onLeave,
+  onDoubleClick,
   onDrag
 }: FilterPointProps) => {
   const {
@@ -322,6 +338,18 @@ export const FilterPoint = ({
   let cy: number
   const moveFreq = useRef(filterFreq)
   const moveGain = useRef(filterGain)
+  const qDragStartX = useRef(0)
+  const qDragLastX = useRef(0)
+  const qDragCurrent = useRef(filterQ)
+  const qDragValue = useRef(filterQ)
+  const qDragChanged = useRef(false)
+
+  useEffect(() => {
+    moveFreq.current = filterFreq
+    moveGain.current = filterGain
+    qDragCurrent.current = filterQ
+    qDragValue.current = filterQ
+  }, [filterFreq, filterGain, filterQ])
 
   const getGraphPointer = (e: MouseEvent | TouchEvent) => {
     const svg = svgRef.current
@@ -334,6 +362,67 @@ export const FilterPoint = ({
       x: (clientX - CTM.e) / CTM.a - padding.left,
       y: (clientY - CTM.f) / CTM.d - padding.top
     }
+  }
+
+  const startQDrag = (e: MouseEvent) => {
+    const svg = svgRef.current
+    if (!svg) return
+
+    qDragChanged.current = false
+    qDragCurrent.current = filterQ
+    qDragValue.current = filterQ
+    const { x } = getGraphPointer(e)
+    qDragStartX.current = x
+    qDragLastX.current = x
+
+    svg.addEventListener('mousemove', qDragMove)
+    svg.addEventListener('mouseup', qDragEnd)
+    svg.addEventListener('mouseleave', qDragEnd)
+  }
+
+  const qDragMove = (e: MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const svg = svgRef.current
+    if (!svg) return
+
+    const { x } = getGraphPointer(e)
+    const deltaX = x - qDragLastX.current
+    qDragLastX.current = x
+    const minAllowedQ = Math.max(0.0001, minQ ?? scaleMinQ ?? 0.1)
+    const maxAllowedQ = maxQ ?? scaleMaxQ ?? 25
+    const deltaQ =
+      ((maxAllowedQ - minAllowedQ) * deltaX) /
+      Math.max(width, 1)
+    qDragCurrent.current = limitRange(
+      qDragCurrent.current + deltaQ,
+      minAllowedQ,
+      maxAllowedQ
+    )
+    const nextQ = stripTail(
+      qDragCurrent.current,
+      qDecimals
+    )
+
+    if (nextQ === qDragValue.current) return
+
+    qDragChanged.current = true
+    qDragValue.current = nextQ
+    onChange?.({ index, ...filter, q: nextQ })
+  }
+
+  const qDragEnd = (e: MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const svg = svgRef.current
+    if (!svg) return
+
+    svg.removeEventListener('mousemove', qDragMove)
+    svg.removeEventListener('mouseup', qDragEnd)
+    svg.removeEventListener('mouseleave', qDragEnd)
+
+    if (!qDragChanged.current) return
+    onChange?.({ index, ...filter, q: qDragValue.current, ended: true })
   }
 
   const dragMove = (e: MouseEvent | TouchEvent) => {
@@ -424,6 +513,10 @@ export const FilterPoint = ({
   const dragStart = (e: MouseEvent | TouchEvent) => {
     e.preventDefault() // Prevent scrolling on touch
     e.stopPropagation()
+    if ('button' in e && e.button === 2) {
+      startQDrag(e as MouseEvent)
+      return
+    }
     const svg = svgRef.current
     const circleEl = circleRef.current
     if (!svg || !circleEl) return
@@ -459,6 +552,13 @@ export const FilterPoint = ({
   const handleMouseLeave = () => {
     setHovered(false)
     onLeave?.({ ...filter, index })
+  }
+
+  const handleDoubleClick = (
+    e: ReactMouseEvent<SVGCircleElement | SVGTextElement>
+  ) => {
+    e.stopPropagation()
+    onDoubleClick?.({ ...filter, index })
   }
 
   useEffect(() => {
@@ -549,7 +649,9 @@ export const FilterPoint = ({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onMouseDown={(e) => dragStart(e as unknown as MouseEvent)}
+        onContextMenu={(e) => e.preventDefault()}
         onTouchStart={(e) => dragStart(e as unknown as TouchEvent)}
+        onDoubleClick={handleDoubleClick}
         style={{ cursor: 'pointer', pointerEvents: 'auto', ...style }}
         className={className}
       />
@@ -564,6 +666,7 @@ export const FilterPoint = ({
           fontSize={labelFontSize}
           fontFamily={labelFontFamily}
           style={{ ...labelStyle }}
+          onDoubleClick={handleDoubleClick}
           dangerouslySetInnerHTML={{ __html: label }}
         />
       )}
