@@ -364,22 +364,6 @@ export const FilterPoint = ({
     }
   }
 
-  const startQDrag = (e: MouseEvent) => {
-    const svg = svgRef.current
-    if (!svg) return
-
-    qDragChanged.current = false
-    qDragCurrent.current = filterQ
-    qDragValue.current = filterQ
-    const { x } = getGraphPointer(e)
-    qDragStartX.current = x
-    qDragLastX.current = x
-
-    svg.addEventListener('mousemove', qDragMove)
-    svg.addEventListener('mouseup', qDragEnd)
-    svg.addEventListener('mouseleave', qDragEnd)
-  }
-
   const qDragMove = (e: MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -391,18 +375,13 @@ export const FilterPoint = ({
     qDragLastX.current = x
     const minAllowedQ = Math.max(0.0001, minQ ?? scaleMinQ ?? 0.1)
     const maxAllowedQ = maxQ ?? scaleMaxQ ?? 25
-    const deltaQ =
-      ((maxAllowedQ - minAllowedQ) * deltaX) /
-      Math.max(width, 1)
+    const deltaQ = ((maxAllowedQ - minAllowedQ) * deltaX) / Math.max(width, 1)
     qDragCurrent.current = limitRange(
       qDragCurrent.current + deltaQ,
       minAllowedQ,
       maxAllowedQ
     )
-    const nextQ = stripTail(
-      qDragCurrent.current,
-      qDecimals
-    )
+    const nextQ = stripTail(qDragCurrent.current, qDecimals)
 
     if (nextQ === qDragValue.current) return
 
@@ -423,6 +402,22 @@ export const FilterPoint = ({
 
     if (!qDragChanged.current) return
     onChange?.({ index, ...filter, q: qDragValue.current, ended: true })
+  }
+
+  const startQDrag = (e: MouseEvent) => {
+    const svg = svgRef.current
+    if (!svg) return
+
+    qDragChanged.current = false
+    qDragCurrent.current = filterQ
+    qDragValue.current = filterQ
+    const { x } = getGraphPointer(e)
+    qDragStartX.current = x
+    qDragLastX.current = x
+
+    svg.addEventListener('mousemove', qDragMove)
+    svg.addEventListener('mouseup', qDragEnd)
+    svg.addEventListener('mouseleave', qDragEnd)
   }
 
   const dragMove = (e: MouseEvent | TouchEvent) => {
