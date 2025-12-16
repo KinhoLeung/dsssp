@@ -1642,19 +1642,6 @@ const FilterPoint = ({
       y: (clientY - CTM.f) / CTM.d - padding.top
     };
   };
-  const startQDrag = (e) => {
-    const svg = svgRef.current;
-    if (!svg) return;
-    qDragChanged.current = false;
-    qDragCurrent.current = filterQ;
-    qDragValue.current = filterQ;
-    const { x: x2 } = getGraphPointer(e);
-    qDragStartX.current = x2;
-    qDragLastX.current = x2;
-    svg.addEventListener("mousemove", qDragMove);
-    svg.addEventListener("mouseup", qDragEnd);
-    svg.addEventListener("mouseleave", qDragEnd);
-  };
   const qDragMove = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -1671,10 +1658,7 @@ const FilterPoint = ({
       minAllowedQ,
       maxAllowedQ
     );
-    const nextQ = stripTail(
-      qDragCurrent.current,
-      qDecimals
-    );
+    const nextQ = stripTail(qDragCurrent.current, qDecimals);
     if (nextQ === qDragValue.current) return;
     qDragChanged.current = true;
     qDragValue.current = nextQ;
@@ -1690,6 +1674,19 @@ const FilterPoint = ({
     svg.removeEventListener("mouseleave", qDragEnd);
     if (!qDragChanged.current) return;
     onChange?.({ index, ...filter, q: qDragValue.current, ended: true });
+  };
+  const startQDrag = (e) => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    qDragChanged.current = false;
+    qDragCurrent.current = filterQ;
+    qDragValue.current = filterQ;
+    const { x: x2 } = getGraphPointer(e);
+    qDragStartX.current = x2;
+    qDragLastX.current = x2;
+    svg.addEventListener("mousemove", qDragMove);
+    svg.addEventListener("mouseup", qDragEnd);
+    svg.addEventListener("mouseleave", qDragEnd);
   };
   const dragMove = (e) => {
     e.preventDefault();
