@@ -11,12 +11,10 @@ import { defaultScale, defaultTheme } from '../../defaults'
 import { getLogScaleFn } from '../../math'
 import { type GraphScale, type GraphTheme } from '../../types'
 
-import {
-  GraphGainGrid,
-  GraphFrequencyGrid,
-  GraphGradient,
-  GraphProvider
-} from '.'
+import { GraphFrequencyGrid } from './GraphFrequencyGrid'
+import { GraphGainGrid } from './GraphGainGrid'
+import { GraphGradient } from './GraphGradient'
+import { GraphProvider } from './GraphProvider'
 
 // Recursive type DeepPartial
 type DeepPartial<T> = {

@@ -1,4 +1,4 @@
-import { useGraph } from '.'
+import { useGraph } from './useGraph'
 
 export const directions = {
   VERTICAL: {

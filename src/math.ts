@@ -2,6 +2,7 @@
 /* eslint-disable no-bitwise */
 import {
   type BiQuadCoefficients,
+  type DrcSettings,
   type FilterType,
   type GraphFilter,
   type GraphPoint,
@@ -48,6 +49,27 @@ export const getLogScaleFn = (
       }
     }
     return ticks
+  }
+
+  return { x, ticks }
+}
+
+export const getLinearScaleFn = (
+  min: number,
+  max: number,
+  width: number
+): LogScaleFunction => {
+  const range = max - min
+  const x = (value: number) => {
+    if (!range) return width / 2
+    return ((value - min) / range) * width
+  }
+
+  const ticks = (count: number) => {
+    const safeCount = Math.max(2, fastRound(count || 2))
+    if (!range) return [min]
+    const step = range / (safeCount - 1)
+    return Array.from({ length: safeCount }, (_, index) => min + step * index)
   }
 
   return { x, ticks }
@@ -319,6 +341,60 @@ export function calcMagnitudes(
     magPlot.push({ frequency, magnitude /*, amplitude, deviation */ })
   }
   return magPlot
+}
+
+type DrcCurveParams = DrcSettings & {
+  inputMin: number
+  inputMax: number
+  steps: number
+}
+
+export const calcDrcOutput = (
+  input: number,
+  threshold: number,
+  ratio: number,
+  knee: number = 0
+) => {
+  const safeRatio = ratio > 0 ? ratio : 1
+  const kneeWidth = Math.max(0, knee)
+  const halfKnee = kneeWidth / 2
+
+  if (kneeWidth > 0) {
+    if (input <= threshold - halfKnee) return input
+    if (input >= threshold + halfKnee) {
+      return threshold + (input - threshold) / safeRatio
+    }
+
+    const delta = input - threshold + halfKnee
+    return input + ((1 / safeRatio - 1) * delta * delta) / (2 * kneeWidth)
+  }
+
+  if (input <= threshold) return input
+  return threshold + (input - threshold) / safeRatio
+}
+
+export const calcDrcMagnitudes = ({
+  threshold,
+  ratio,
+  knee = 0,
+  makeup = 0,
+  inputMin,
+  inputMax,
+  steps
+}: DrcCurveParams): Magnitude[] => {
+  const min = Math.min(inputMin, inputMax)
+  const max = Math.max(inputMin, inputMax)
+  const safeSteps = Math.max(2, fastRound(steps || 2))
+  const range = max - min || 1
+
+  const mags: Magnitude[] = []
+  for (let index = 0; index < safeSteps; index++) {
+    const input = min + (range * index) / (safeSteps - 1)
+    const output = calcDrcOutput(input, threshold, ratio, knee) + makeup
+    mags.push({ frequency: input, magnitude: output })
+  }
+
+  return mags
 }
 
 export const reducePoints = (points: GraphPoint[]) => {

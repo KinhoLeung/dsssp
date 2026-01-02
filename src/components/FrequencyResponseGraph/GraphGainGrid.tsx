@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { getCenterLine, scaleMagnitude } from '../../math'
-import { useGraph } from '.'
+import { useGraph } from './useGraph'
 
 export const GraphGainGrid = () => {
   const {

@@ -56,6 +56,33 @@ export type GraphFilter = {
   q: number
 }
 
+export type DrcSettings = {
+  /**
+   * Threshold in dB where compression begins.
+   */
+  threshold: number
+  /**
+   * Compression ratio. Values > 1 compress, values < 1 expand.
+   */
+  ratio: number
+  /**
+   * Soft-knee width in dB.
+   */
+  knee?: number
+  /**
+   * Makeup gain in dB.
+   */
+  makeup?: number
+  /**
+   * Attack time in milliseconds.
+   */
+  attack?: number
+  /**
+   * Release time in milliseconds.
+   */
+  release?: number
+}
+
 export type GraphScale = {
   minFreq: number
   maxFreq: number

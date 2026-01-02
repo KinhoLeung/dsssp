@@ -1,6 +1,6 @@
 import { useContext } from 'react'
 
-import { GraphContext } from '.'
+import { GraphContext } from './GraphProvider'
 
 export const useGraph = () => {
   const context = useContext(GraphContext)

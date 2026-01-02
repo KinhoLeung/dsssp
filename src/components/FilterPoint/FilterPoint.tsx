@@ -17,7 +17,7 @@ import {
   stripTail
 } from '../../math'
 import { type GraphFilter } from '../../types'
-import { getIconStyles, getIconSymbol, getZeroGain } from '../../utils'
+import { getIconStyles, getIconSymbol, getZeroGain, getZeroQ } from '../../utils'
 import { useGraph } from '../..'
 
 import '../../icons/font.css'
@@ -321,8 +321,12 @@ export const FilterPoint = ({
   const [hovered, setHovered] = useState(false)
   const [dragging, setDragging] = useState(false)
 
-  const [zeroGain, passFilter] = useMemo(
-    () => [getZeroGain(type), type.includes('PASS') || type === 'NOTCH'],
+  const [zeroGain, passFilter, zeroQ] = useMemo(
+    () => [
+      getZeroGain(type),
+      type.includes('PASS') || type === 'NOTCH',
+      getZeroQ(type)
+    ],
     [type]
   )
 
@@ -509,7 +513,7 @@ export const FilterPoint = ({
     e.preventDefault() // Prevent scrolling on touch
     e.stopPropagation()
     if ('button' in e && e.button === 2) {
-      startQDrag(e as MouseEvent)
+      if (!zeroQ) startQDrag(e as MouseEvent)
       return
     }
     const svg = svgRef.current
@@ -558,7 +562,7 @@ export const FilterPoint = ({
 
   useEffect(() => {
     const circle = circleRef.current
-    if (!wheelQ || !circle) return
+    if (!wheelQ || !circle || zeroQ) return
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault()
@@ -576,6 +580,7 @@ export const FilterPoint = ({
     }
   }, [
     wheelQ,
+    zeroQ,
     filterQ,
     minQ,
     maxQ,
