@@ -1,528 +1,5 @@
-import React, { forwardRef, useRef, useImperativeHandle, createContext, useMemo, useContext, useState, useCallback, useEffect, useLayoutEffect } from 'react';
-import { jsxs, Fragment, jsx } from 'react/jsx-runtime';
-
-const GraphGainGrid = () => {
-  const {
-    height,
-    width,
-    padding,
-    scale: {
-      minGain,
-      maxGain,
-      displayMinGain,
-      displayMaxGain,
-      dbSteps,
-      dbLabels,
-      dbLabelSteps,
-      showDbUnitLabel
-    },
-    theme: {
-      background: {
-        grid: { dotted, lineColor, lineWidth },
-        label: { color: labelColor, fontSize, fontFamily }
-      }
-    }
-  } = useGraph();
-  if (!dbSteps) return null;
-  const steps = dbSteps || maxGain;
-  const labelEvery = dbLabelSteps && dbLabelSteps > 0 ? Math.max(1, Math.round(dbLabelSteps / steps)) : 1;
-  const gainMinForDisplay = typeof displayMinGain === "number" ? displayMinGain : minGain;
-  const gainMaxForDisplay = typeof displayMaxGain === "number" ? displayMaxGain : maxGain;
-  const dBs = Array.from(
-    { length: (maxGain - minGain) / steps + 1 },
-    (_, i) => {
-      return maxGain - i * steps;
-    }
-  );
-  const centerY = getCenterLine(gainMinForDisplay, gainMaxForDisplay, height);
-  const strokeDasharray = "1,2";
-  const gainLabelX = 4 - padding.left;
-  const unitLabelY = -padding.top / 2;
-  return /* @__PURE__ */ jsxs(Fragment, { children: [
-    dBs.map((tick, index) => {
-      const tickY = scaleMagnitude(
-        tick,
-        gainMinForDisplay,
-        gainMaxForDisplay,
-        height
-      );
-      const tickLabel = tick > 0 ? `+${tick}` : tick;
-      const showLabel = dbLabels && index % labelEvery === 0;
-      return /* @__PURE__ */ jsxs(React.Fragment, { children: [
-        /* @__PURE__ */ jsx(
-          "line",
-          {
-            x1: "0",
-            x2: width,
-            y1: tickY,
-            y2: tickY,
-            stroke: lineColor,
-            strokeWidth: lineWidth.minor,
-            ...dotted ? { strokeDasharray } : {}
-          }
-        ),
-        showLabel && /* @__PURE__ */ jsx(
-          "text",
-          {
-            x: gainLabelX,
-            y: tickY,
-            fill: labelColor,
-            fontSize,
-            fontFamily,
-            textAnchor: "start",
-            dominantBaseline: "middle",
-            children: tickLabel
-          }
-        )
-      ] }, tick);
-    }),
-    /* @__PURE__ */ jsx(
-      "line",
-      {
-        id: "centerLine",
-        x1: "0",
-        x2: width,
-        y1: centerY,
-        y2: centerY,
-        stroke: lineColor,
-        strokeWidth: lineWidth.center,
-        ...dotted ? { strokeDasharray } : {}
-      }
-    ),
-    showDbUnitLabel !== false && dbLabels && /* @__PURE__ */ jsx(
-      "text",
-      {
-        y: unitLabelY,
-        x: gainLabelX,
-        fill: labelColor,
-        fontSize,
-        fontFamily,
-        dominantBaseline: "middle",
-        children: "dB"
-      }
-    )
-  ] });
-};
-
-const GraphFrequencyGrid = () => {
-  const {
-    height,
-    logScale,
-    padding,
-    scale: { octaveLabels, octaveTicks, majorTicks, frequencyTicks },
-    theme: {
-      background: {
-        grid: { dotted, lineColor, lineWidth },
-        label: { color: labelColor, fontSize, fontFamily }
-      }
-    }
-  } = useGraph();
-  const autoTicks = octaveTicks ? logScale.ticks(octaveTicks) : [];
-  const ticks = frequencyTicks?.length ? frequencyTicks : autoTicks;
-  const strokeDasharray = "1,2";
-  return /* @__PURE__ */ jsxs(Fragment, { children: [
-    (frequencyTicks?.length ? ticks : ticks.slice(1, -1)).map((tick) => {
-      const tickX = logScale.x(tick);
-      const width = majorTicks.includes(tick) ? lineWidth.major : lineWidth.minor;
-      return /* @__PURE__ */ jsx(
-        "line",
-        {
-          x1: tickX,
-          x2: tickX,
-          y1: "0",
-          y2: height,
-          stroke: lineColor,
-          strokeWidth: width,
-          ...dotted ? { strokeDasharray } : {}
-        },
-        tick
-      );
-    }),
-    octaveLabels.map((octave) => {
-      const octaveX = logScale.x(octave);
-      return /* @__PURE__ */ jsx(
-        "text",
-        {
-          y: height + padding.bottom - 4,
-          x: octaveX,
-          textAnchor: "middle",
-          fill: labelColor,
-          fontSize,
-          fontFamily,
-          children: (octave < 1e3 ? octave : `${octave / 1e3}k`) + "Hz"
-        },
-        octave
-      );
-    })
-  ] });
-};
-
-function getDefaultExportFromCjs (x) {
-	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
-}
-
-var cjs;
-var hasRequiredCjs;
-
-function requireCjs () {
-	if (hasRequiredCjs) return cjs;
-	hasRequiredCjs = 1;
-
-	var isMergeableObject = function isMergeableObject(value) {
-		return isNonNullObject(value)
-			&& !isSpecial(value)
-	};
-
-	function isNonNullObject(value) {
-		return !!value && typeof value === 'object'
-	}
-
-	function isSpecial(value) {
-		var stringValue = Object.prototype.toString.call(value);
-
-		return stringValue === '[object RegExp]'
-			|| stringValue === '[object Date]'
-			|| isReactElement(value)
-	}
-
-	// see https://github.com/facebook/react/blob/b5ac963fb791d1298e7f396236383bc955f916c1/src/isomorphic/classic/element/ReactElement.js#L21-L25
-	var canUseSymbol = typeof Symbol === 'function' && Symbol.for;
-	var REACT_ELEMENT_TYPE = canUseSymbol ? Symbol.for('react.element') : 0xeac7;
-
-	function isReactElement(value) {
-		return value.$$typeof === REACT_ELEMENT_TYPE
-	}
-
-	function emptyTarget(val) {
-		return Array.isArray(val) ? [] : {}
-	}
-
-	function cloneUnlessOtherwiseSpecified(value, options) {
-		return (options.clone !== false && options.isMergeableObject(value))
-			? deepmerge(emptyTarget(value), value, options)
-			: value
-	}
-
-	function defaultArrayMerge(target, source, options) {
-		return target.concat(source).map(function(element) {
-			return cloneUnlessOtherwiseSpecified(element, options)
-		})
-	}
-
-	function getMergeFunction(key, options) {
-		if (!options.customMerge) {
-			return deepmerge
-		}
-		var customMerge = options.customMerge(key);
-		return typeof customMerge === 'function' ? customMerge : deepmerge
-	}
-
-	function getEnumerableOwnPropertySymbols(target) {
-		return Object.getOwnPropertySymbols
-			? Object.getOwnPropertySymbols(target).filter(function(symbol) {
-				return Object.propertyIsEnumerable.call(target, symbol)
-			})
-			: []
-	}
-
-	function getKeys(target) {
-		return Object.keys(target).concat(getEnumerableOwnPropertySymbols(target))
-	}
-
-	function propertyIsOnObject(object, property) {
-		try {
-			return property in object
-		} catch(_) {
-			return false
-		}
-	}
-
-	// Protects from prototype poisoning and unexpected merging up the prototype chain.
-	function propertyIsUnsafe(target, key) {
-		return propertyIsOnObject(target, key) // Properties are safe to merge if they don't exist in the target yet,
-			&& !(Object.hasOwnProperty.call(target, key) // unsafe if they exist up the prototype chain,
-				&& Object.propertyIsEnumerable.call(target, key)) // and also unsafe if they're nonenumerable.
-	}
-
-	function mergeObject(target, source, options) {
-		var destination = {};
-		if (options.isMergeableObject(target)) {
-			getKeys(target).forEach(function(key) {
-				destination[key] = cloneUnlessOtherwiseSpecified(target[key], options);
-			});
-		}
-		getKeys(source).forEach(function(key) {
-			if (propertyIsUnsafe(target, key)) {
-				return
-			}
-
-			if (propertyIsOnObject(target, key) && options.isMergeableObject(source[key])) {
-				destination[key] = getMergeFunction(key, options)(target[key], source[key], options);
-			} else {
-				destination[key] = cloneUnlessOtherwiseSpecified(source[key], options);
-			}
-		});
-		return destination
-	}
-
-	function deepmerge(target, source, options) {
-		options = options || {};
-		options.arrayMerge = options.arrayMerge || defaultArrayMerge;
-		options.isMergeableObject = options.isMergeableObject || isMergeableObject;
-		// cloneUnlessOtherwiseSpecified is added to `options` so that custom arrayMerge()
-		// implementations can use it. The caller may not replace it.
-		options.cloneUnlessOtherwiseSpecified = cloneUnlessOtherwiseSpecified;
-
-		var sourceIsArray = Array.isArray(source);
-		var targetIsArray = Array.isArray(target);
-		var sourceAndTargetTypesMatch = sourceIsArray === targetIsArray;
-
-		if (!sourceAndTargetTypesMatch) {
-			return cloneUnlessOtherwiseSpecified(source, options)
-		} else if (sourceIsArray) {
-			return options.arrayMerge(target, source, options)
-		} else {
-			return mergeObject(target, source, options)
-		}
-	}
-
-	deepmerge.all = function deepmergeAll(array, options) {
-		if (!Array.isArray(array)) {
-			throw new Error('first argument should be an array')
-		}
-
-		return array.reduce(function(prev, next) {
-			return deepmerge(prev, next, options)
-		}, {})
-	};
-
-	var deepmerge_1 = deepmerge;
-
-	cjs = deepmerge_1;
-	return cjs;
-}
-
-var cjsExports = requireCjs();
-const merge = /*@__PURE__*/getDefaultExportFromCjs(cjsExports);
-
-const defaultScale = {
-  minFreq: 20,
-  maxFreq: 2e4,
-  displayMinFreq: 16,
-  displayMaxFreq: 25e3,
-  sampleRate: 96e3,
-  // 48000 / 96000 / 192000
-  minGain: -18,
-  maxGain: 12,
-  gainPrecision: 1,
-  qPrecision: 1,
-  minQ: 0.1,
-  maxQ: 25,
-  displayMinGain: -20,
-  displayMaxGain: 13,
-  dbSteps: 3,
-  // 0 to disable
-  dbLabelSteps: 6,
-  dbLabels: true,
-  octaveTicks: 10,
-  // ticks per octave (0 to disable)
-  showDbUnitLabel: false,
-  frequencyTicks: [
-    20,
-    30,
-    40,
-    50,
-    60,
-    70,
-    80,
-    90,
-    100,
-    200,
-    300,
-    400,
-    500,
-    600,
-    700,
-    800,
-    900,
-    1e3,
-    2e3,
-    3e3,
-    4e3,
-    5e3,
-    6e3,
-    7e3,
-    8e3,
-    9e3,
-    1e4,
-    2e4
-  ],
-  octaveLabels: [20, 50, 100, 200, 500, 1e3, 2e3, 5e3, 1e4, 2e4],
-  majorTicks: [20, 50, 100, 200, 500, 1e3, 2e3, 5e3, 1e4, 2e4]
-  // ticks with the major line width, same as zero gain
-};
-
-const defaultTheme = {
-  background: {
-    padding: { top: 12, right: 12, bottom: 20, left: 36 },
-    // background grid lines
-    grid: {
-      dotted: false,
-      lineColor: "#3D4C5F",
-      lineWidth: { minor: 0.25, major: 0.5, center: 1, border: 0.25 }
-    },
-    // background gradient
-    gradient: {
-      start: "#1E2530",
-      stop: "#000000",
-      direction: "VERTICAL"
-    },
-    // frequency and gain labels
-    label: {
-      fontSize: 10,
-      fontFamily: "sans-serif",
-      color: "#626F84"
-    },
-    // mouse tracker
-    tracker: {
-      lineWidth: 0.5,
-      lineColor: "#7B899D",
-      labelColor: "#626F84",
-      backgroundColor: "#070C18"
-    }
-  },
-  // basic frequency response and composite curves
-  curve: {
-    width: 1.5,
-    opacity: 1,
-    color: "#FFFFFF"
-  },
-  filters: {
-    // filter curves
-    curve: {
-      width: { normal: 1, active: 1 },
-      opacity: { normal: 0.5, active: 0.7 }
-    },
-    // filter points
-    point: {
-      radius: 16,
-      lineWidth: 2,
-      backgroundOpacity: {
-        normal: 0.2,
-        active: 0.6,
-        drag: 0.8
-      },
-      // label inside the point
-      // size and color applicable to filter icons as well
-      label: {
-        fontSize: 24,
-        fontFamily: "monospace",
-        color: "inherit"
-      }
-    },
-    // styles of the empty / zero gain filters
-    zeroPoint: {
-      color: "#626F84",
-      background: "#97A3B4"
-    },
-    gradientOpacity: 0.7,
-    fill: false,
-    // default color for filters, points, and curves
-    defaultColor: "#66FF66",
-    // empty placeholder of filter colors
-    colors: []
-  }
-};
-
-const FrequencyResponseGraph = forwardRef((props, forwardedRef) => {
-  const ref = useRef(null);
-  useImperativeHandle(forwardedRef, () => ref.current);
-  const {
-    width,
-    height,
-    scale = {},
-    theme = {},
-    style = {},
-    className = "",
-    children
-  } = props;
-  const mergedTheme = merge(defaultTheme, theme);
-  const mergedScale = merge(defaultScale, scale, {
-    arrayMerge: (_, source) => source
-    // overwrite arrays
-  });
-  const {
-    background: { padding }
-  } = mergedTheme;
-  const { minFreq, maxFreq, displayMinFreq, displayMaxFreq } = mergedScale;
-  const logMinFreq = displayMinFreq && displayMinFreq > 0 ? displayMinFreq : minFreq;
-  const logMaxFreq = displayMaxFreq && displayMaxFreq > logMinFreq ? displayMaxFreq : maxFreq;
-  const graphWidth = Math.max(width - padding.left - padding.right, 0);
-  const graphHeight = Math.max(height - padding.top - padding.bottom, 0);
-  const logScale = getLogScaleFn(logMinFreq, logMaxFreq, graphWidth);
-  FrequencyResponseGraph.displayName = "FrequencyResponseGraph";
-  const outerWidth = width;
-  const outerHeight = height;
-  const graphTransform = `translate(${padding.left}, ${padding.top})`;
-  const graphId = `frequency-response-graph-${String(Math.random()).slice(2, 9)}`;
-  const clipPathId = `${graphId}-clip`;
-  const resetStyles = `
-  #${graphId} * {
-    pointer-events: none;
-  }`;
-  return /* @__PURE__ */ jsxs(
-    "svg",
-    {
-      ref,
-      id: graphId,
-      className,
-      viewBox: `0 0 ${outerWidth} ${outerHeight}`,
-      style: {
-        width: outerWidth,
-        height: outerHeight,
-        position: "relative",
-        verticalAlign: "middle",
-        userSelect: "none",
-        ...style
-      },
-      children: [
-        /* @__PURE__ */ jsxs("defs", { children: [
-          /* @__PURE__ */ jsx("style", { children: resetStyles }),
-          /* @__PURE__ */ jsx("clipPath", { id: clipPathId, children: /* @__PURE__ */ jsx(
-            "rect",
-            {
-              x: "0",
-              y: "0",
-              width: graphWidth,
-              height: graphHeight
-            }
-          ) })
-        ] }),
-        /* @__PURE__ */ jsx(
-          GraphProvider,
-          {
-            svgRef: ref,
-            width: graphWidth,
-            height: graphHeight,
-            outerWidth,
-            outerHeight,
-            padding,
-            theme: mergedTheme,
-            scale: mergedScale,
-            logScale,
-            clipPathId,
-            children: /* @__PURE__ */ jsxs("g", { transform: graphTransform, children: [
-              /* @__PURE__ */ jsx(GraphGradient, {}),
-              /* @__PURE__ */ jsx(GraphGainGrid, {}),
-              /* @__PURE__ */ jsx(GraphFrequencyGrid, {}),
-              children
-            ] })
-          }
-        )
-      ]
-    }
-  );
-});
+import React, { createContext, useMemo, useContext, useState, useCallback, useEffect, forwardRef, useRef, useImperativeHandle, useLayoutEffect } from 'react';
+import { jsx, jsxs, Fragment } from 'react/jsx-runtime';
 
 const GraphContext = createContext(
   undefined
@@ -733,6 +210,20 @@ const getLogScaleFn = (minFreq, maxFreq, width) => {
       }
     }
     return ticks2;
+  };
+  return { x, ticks };
+};
+const getLinearScaleFn = (min, max, width) => {
+  const range = max - min;
+  const x = (value) => {
+    if (!range) return width / 2;
+    return (value - min) / range * width;
+  };
+  const ticks = (count) => {
+    const safeCount = Math.max(2, fastRound(count || 2));
+    if (!range) return [min];
+    const step = range / (safeCount - 1);
+    return Array.from({ length: safeCount }, (_, index) => min + step * index);
   };
   return { x, ticks };
 };
@@ -951,6 +442,42 @@ function calcMagnitudes(vars, steps, minFreq, maxFreq, sampleRate = 44100) {
   }
   return magPlot;
 }
+const calcDrcOutput = (input, threshold, ratio, knee = 0) => {
+  const safeRatio = ratio > 0 ? ratio : 1;
+  const kneeWidth = Math.max(0, knee);
+  const halfKnee = kneeWidth / 2;
+  if (kneeWidth > 0) {
+    if (input <= threshold - halfKnee) return input;
+    if (input >= threshold + halfKnee) {
+      return threshold + (input - threshold) / safeRatio;
+    }
+    const delta = input - threshold + halfKnee;
+    return input + (1 / safeRatio - 1) * delta * delta / (2 * kneeWidth);
+  }
+  if (input <= threshold) return input;
+  return threshold + (input - threshold) / safeRatio;
+};
+const calcDrcMagnitudes = ({
+  threshold,
+  ratio,
+  knee = 0,
+  makeup = 0,
+  inputMin,
+  inputMax,
+  steps
+}) => {
+  const min = Math.min(inputMin, inputMax);
+  const max = Math.max(inputMin, inputMax);
+  const safeSteps = Math.max(2, fastRound(steps || 2));
+  const range = max - min || 1;
+  const mags = [];
+  for (let index = 0; index < safeSteps; index++) {
+    const input = min + range * index / (safeSteps - 1);
+    const output = calcDrcOutput(input, threshold, ratio, knee) + makeup;
+    mags.push({ frequency: input, magnitude: output });
+  }
+  return mags;
+};
 const reducePoints = (points) => {
   const uniquePoints = points.slice(0, -1).reduce((acc, point, idx) => {
     if (fastRound(point.y * 4) !== fastRound((points[idx - 1]?.y || 0) * 4)) {
@@ -1044,6 +571,135 @@ const calcCompositeMagnitudes = (magnitudes) => {
   return compositeMags;
 };
 const limitRange = (value, min, max) => Math.min(Math.max(value, min), max);
+
+const defaultScale = {
+  minFreq: 20,
+  maxFreq: 2e4,
+  displayMinFreq: 16,
+  displayMaxFreq: 25e3,
+  sampleRate: 96e3,
+  // 48000 / 96000 / 192000
+  minGain: -18,
+  maxGain: 12,
+  gainPrecision: 1,
+  qPrecision: 1,
+  minQ: 0.1,
+  maxQ: 25,
+  displayMinGain: -20,
+  displayMaxGain: 13,
+  dbSteps: 3,
+  // 0 to disable
+  dbLabelSteps: 6,
+  dbLabels: true,
+  octaveTicks: 10,
+  // ticks per octave (0 to disable)
+  showDbUnitLabel: false,
+  frequencyTicks: [
+    20,
+    30,
+    40,
+    50,
+    60,
+    70,
+    80,
+    90,
+    100,
+    200,
+    300,
+    400,
+    500,
+    600,
+    700,
+    800,
+    900,
+    1e3,
+    2e3,
+    3e3,
+    4e3,
+    5e3,
+    6e3,
+    7e3,
+    8e3,
+    9e3,
+    1e4,
+    2e4
+  ],
+  octaveLabels: [20, 50, 100, 200, 500, 1e3, 2e3, 5e3, 1e4, 2e4],
+  majorTicks: [20, 50, 100, 200, 500, 1e3, 2e3, 5e3, 1e4, 2e4]
+  // ticks with the major line width, same as zero gain
+};
+
+const defaultTheme = {
+  background: {
+    padding: { top: 12, right: 12, bottom: 20, left: 36 },
+    // background grid lines
+    grid: {
+      dotted: false,
+      lineColor: "#3D4C5F",
+      lineWidth: { minor: 0.25, major: 0.5, center: 1, border: 0.25 }
+    },
+    // background gradient
+    gradient: {
+      start: "#1E2530",
+      stop: "#000000",
+      direction: "VERTICAL"
+    },
+    // frequency and gain labels
+    label: {
+      fontSize: 10,
+      fontFamily: "sans-serif",
+      color: "#626F84"
+    },
+    // mouse tracker
+    tracker: {
+      lineWidth: 0.5,
+      lineColor: "#7B899D",
+      labelColor: "#626F84",
+      backgroundColor: "#070C18"
+    }
+  },
+  // basic frequency response and composite curves
+  curve: {
+    width: 1.5,
+    opacity: 1,
+    color: "#FFFFFF"
+  },
+  filters: {
+    // filter curves
+    curve: {
+      width: { normal: 1, active: 1 },
+      opacity: { normal: 0.5, active: 0.7 }
+    },
+    // filter points
+    point: {
+      radius: 16,
+      lineWidth: 2,
+      backgroundOpacity: {
+        normal: 0.2,
+        active: 0.6,
+        drag: 0.8
+      },
+      // label inside the point
+      // size and color applicable to filter icons as well
+      label: {
+        fontSize: 24,
+        fontFamily: "monospace",
+        color: "inherit"
+      }
+    },
+    // styles of the empty / zero gain filters
+    zeroPoint: {
+      color: "#626F84",
+      background: "#97A3B4"
+    },
+    gradientOpacity: 0.7,
+    fill: false,
+    // default color for filters, points, and curves
+    defaultColor: "#66FF66",
+    // empty placeholder of filter colors
+    colors: []
+  }
+};
 
 const getPointerPosition = (e) => {
   const eventTarget = e.currentTarget || e.target;
@@ -1211,12 +867,695 @@ const CompositeCurve = ({
   ] });
 };
 
+function getDefaultExportFromCjs (x) {
+	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
+}
+
+var cjs;
+var hasRequiredCjs;
+
+function requireCjs () {
+	if (hasRequiredCjs) return cjs;
+	hasRequiredCjs = 1;
+
+	var isMergeableObject = function isMergeableObject(value) {
+		return isNonNullObject(value)
+			&& !isSpecial(value)
+	};
+
+	function isNonNullObject(value) {
+		return !!value && typeof value === 'object'
+	}
+
+	function isSpecial(value) {
+		var stringValue = Object.prototype.toString.call(value);
+
+		return stringValue === '[object RegExp]'
+			|| stringValue === '[object Date]'
+			|| isReactElement(value)
+	}
+
+	// see https://github.com/facebook/react/blob/b5ac963fb791d1298e7f396236383bc955f916c1/src/isomorphic/classic/element/ReactElement.js#L21-L25
+	var canUseSymbol = typeof Symbol === 'function' && Symbol.for;
+	var REACT_ELEMENT_TYPE = canUseSymbol ? Symbol.for('react.element') : 0xeac7;
+
+	function isReactElement(value) {
+		return value.$$typeof === REACT_ELEMENT_TYPE
+	}
+
+	function emptyTarget(val) {
+		return Array.isArray(val) ? [] : {}
+	}
+
+	function cloneUnlessOtherwiseSpecified(value, options) {
+		return (options.clone !== false && options.isMergeableObject(value))
+			? deepmerge(emptyTarget(value), value, options)
+			: value
+	}
+
+	function defaultArrayMerge(target, source, options) {
+		return target.concat(source).map(function(element) {
+			return cloneUnlessOtherwiseSpecified(element, options)
+		})
+	}
+
+	function getMergeFunction(key, options) {
+		if (!options.customMerge) {
+			return deepmerge
+		}
+		var customMerge = options.customMerge(key);
+		return typeof customMerge === 'function' ? customMerge : deepmerge
+	}
+
+	function getEnumerableOwnPropertySymbols(target) {
+		return Object.getOwnPropertySymbols
+			? Object.getOwnPropertySymbols(target).filter(function(symbol) {
+				return Object.propertyIsEnumerable.call(target, symbol)
+			})
+			: []
+	}
+
+	function getKeys(target) {
+		return Object.keys(target).concat(getEnumerableOwnPropertySymbols(target))
+	}
+
+	function propertyIsOnObject(object, property) {
+		try {
+			return property in object
+		} catch(_) {
+			return false
+		}
+	}
+
+	// Protects from prototype poisoning and unexpected merging up the prototype chain.
+	function propertyIsUnsafe(target, key) {
+		return propertyIsOnObject(target, key) // Properties are safe to merge if they don't exist in the target yet,
+			&& !(Object.hasOwnProperty.call(target, key) // unsafe if they exist up the prototype chain,
+				&& Object.propertyIsEnumerable.call(target, key)) // and also unsafe if they're nonenumerable.
+	}
+
+	function mergeObject(target, source, options) {
+		var destination = {};
+		if (options.isMergeableObject(target)) {
+			getKeys(target).forEach(function(key) {
+				destination[key] = cloneUnlessOtherwiseSpecified(target[key], options);
+			});
+		}
+		getKeys(source).forEach(function(key) {
+			if (propertyIsUnsafe(target, key)) {
+				return
+			}
+
+			if (propertyIsOnObject(target, key) && options.isMergeableObject(source[key])) {
+				destination[key] = getMergeFunction(key, options)(target[key], source[key], options);
+			} else {
+				destination[key] = cloneUnlessOtherwiseSpecified(source[key], options);
+			}
+		});
+		return destination
+	}
+
+	function deepmerge(target, source, options) {
+		options = options || {};
+		options.arrayMerge = options.arrayMerge || defaultArrayMerge;
+		options.isMergeableObject = options.isMergeableObject || isMergeableObject;
+		// cloneUnlessOtherwiseSpecified is added to `options` so that custom arrayMerge()
+		// implementations can use it. The caller may not replace it.
+		options.cloneUnlessOtherwiseSpecified = cloneUnlessOtherwiseSpecified;
+
+		var sourceIsArray = Array.isArray(source);
+		var targetIsArray = Array.isArray(target);
+		var sourceAndTargetTypesMatch = sourceIsArray === targetIsArray;
+
+		if (!sourceAndTargetTypesMatch) {
+			return cloneUnlessOtherwiseSpecified(source, options)
+		} else if (sourceIsArray) {
+			return options.arrayMerge(target, source, options)
+		} else {
+			return mergeObject(target, source, options)
+		}
+	}
+
+	deepmerge.all = function deepmergeAll(array, options) {
+		if (!Array.isArray(array)) {
+			throw new Error('first argument should be an array')
+		}
+
+		return array.reduce(function(prev, next) {
+			return deepmerge(prev, next, options)
+		}, {})
+	};
+
+	var deepmerge_1 = deepmerge;
+
+	cjs = deepmerge_1;
+	return cjs;
+}
+
+var cjsExports = requireCjs();
+const merge = /*@__PURE__*/getDefaultExportFromCjs(cjsExports);
+
+const GraphGainGrid = () => {
+  const {
+    height,
+    width,
+    padding,
+    scale: {
+      minGain,
+      maxGain,
+      displayMinGain,
+      displayMaxGain,
+      dbSteps,
+      dbLabels,
+      dbLabelSteps,
+      showDbUnitLabel
+    },
+    theme: {
+      background: {
+        grid: { dotted, lineColor, lineWidth },
+        label: { color: labelColor, fontSize, fontFamily }
+      }
+    }
+  } = useGraph();
+  if (!dbSteps) return null;
+  const steps = dbSteps || maxGain;
+  const labelEvery = dbLabelSteps && dbLabelSteps > 0 ? Math.max(1, Math.round(dbLabelSteps / steps)) : 1;
+  const gainMinForDisplay = typeof displayMinGain === "number" ? displayMinGain : minGain;
+  const gainMaxForDisplay = typeof displayMaxGain === "number" ? displayMaxGain : maxGain;
+  const dBs = Array.from(
+    { length: (maxGain - minGain) / steps + 1 },
+    (_, i) => {
+      return maxGain - i * steps;
+    }
+  );
+  const centerY = getCenterLine(gainMinForDisplay, gainMaxForDisplay, height);
+  const strokeDasharray = "1,2";
+  const gainLabelX = 4 - padding.left;
+  const unitLabelY = -padding.top / 2;
+  return /* @__PURE__ */ jsxs(Fragment, { children: [
+    dBs.map((tick, index) => {
+      const tickY = scaleMagnitude(
+        tick,
+        gainMinForDisplay,
+        gainMaxForDisplay,
+        height
+      );
+      const tickLabel = tick > 0 ? `+${tick}` : tick;
+      const showLabel = dbLabels && index % labelEvery === 0;
+      return /* @__PURE__ */ jsxs(React.Fragment, { children: [
+        /* @__PURE__ */ jsx(
+          "line",
+          {
+            x1: "0",
+            x2: width,
+            y1: tickY,
+            y2: tickY,
+            stroke: lineColor,
+            strokeWidth: lineWidth.minor,
+            ...dotted ? { strokeDasharray } : {}
+          }
+        ),
+        showLabel && /* @__PURE__ */ jsx(
+          "text",
+          {
+            x: gainLabelX,
+            y: tickY,
+            fill: labelColor,
+            fontSize,
+            fontFamily,
+            textAnchor: "start",
+            dominantBaseline: "middle",
+            children: tickLabel
+          }
+        )
+      ] }, tick);
+    }),
+    /* @__PURE__ */ jsx(
+      "line",
+      {
+        id: "centerLine",
+        x1: "0",
+        x2: width,
+        y1: centerY,
+        y2: centerY,
+        stroke: lineColor,
+        strokeWidth: lineWidth.center,
+        ...dotted ? { strokeDasharray } : {}
+      }
+    ),
+    showDbUnitLabel !== false && dbLabels && /* @__PURE__ */ jsx(
+      "text",
+      {
+        y: unitLabelY,
+        x: gainLabelX,
+        fill: labelColor,
+        fontSize,
+        fontFamily,
+        dominantBaseline: "middle",
+        children: "dB"
+      }
+    )
+  ] });
+};
+
+const GraphFrequencyGrid = () => {
+  const {
+    height,
+    logScale,
+    padding,
+    scale: { octaveLabels, octaveTicks, majorTicks, frequencyTicks },
+    theme: {
+      background: {
+        grid: { dotted, lineColor, lineWidth },
+        label: { color: labelColor, fontSize, fontFamily }
+      }
+    }
+  } = useGraph();
+  const autoTicks = octaveTicks ? logScale.ticks(octaveTicks) : [];
+  const ticks = frequencyTicks?.length ? frequencyTicks : autoTicks;
+  const strokeDasharray = "1,2";
+  return /* @__PURE__ */ jsxs(Fragment, { children: [
+    (frequencyTicks?.length ? ticks : ticks.slice(1, -1)).map((tick) => {
+      const tickX = logScale.x(tick);
+      const width = majorTicks.includes(tick) ? lineWidth.major : lineWidth.minor;
+      return /* @__PURE__ */ jsx(
+        "line",
+        {
+          x1: tickX,
+          x2: tickX,
+          y1: "0",
+          y2: height,
+          stroke: lineColor,
+          strokeWidth: width,
+          ...dotted ? { strokeDasharray } : {}
+        },
+        tick
+      );
+    }),
+    octaveLabels.map((octave) => {
+      const octaveX = logScale.x(octave);
+      return /* @__PURE__ */ jsx(
+        "text",
+        {
+          y: height + padding.bottom - 4,
+          x: octaveX,
+          textAnchor: "middle",
+          fill: labelColor,
+          fontSize,
+          fontFamily,
+          children: (octave < 1e3 ? octave : `${octave / 1e3}k`) + "Hz"
+        },
+        octave
+      );
+    })
+  ] });
+};
+
+const FrequencyResponseGraph = forwardRef((props, forwardedRef) => {
+  const ref = useRef(null);
+  useImperativeHandle(forwardedRef, () => ref.current);
+  const {
+    width,
+    height,
+    scale = {},
+    theme = {},
+    style = {},
+    className = "",
+    children
+  } = props;
+  const mergedTheme = merge(defaultTheme, theme);
+  const mergedScale = merge(defaultScale, scale, {
+    arrayMerge: (_, source) => source
+    // overwrite arrays
+  });
+  const {
+    background: { padding }
+  } = mergedTheme;
+  const { minFreq, maxFreq, displayMinFreq, displayMaxFreq } = mergedScale;
+  const logMinFreq = displayMinFreq && displayMinFreq > 0 ? displayMinFreq : minFreq;
+  const logMaxFreq = displayMaxFreq && displayMaxFreq > logMinFreq ? displayMaxFreq : maxFreq;
+  const graphWidth = Math.max(width - padding.left - padding.right, 0);
+  const graphHeight = Math.max(height - padding.top - padding.bottom, 0);
+  const logScale = getLogScaleFn(logMinFreq, logMaxFreq, graphWidth);
+  FrequencyResponseGraph.displayName = "FrequencyResponseGraph";
+  const outerWidth = width;
+  const outerHeight = height;
+  const graphTransform = `translate(${padding.left}, ${padding.top})`;
+  const graphId = `frequency-response-graph-${String(Math.random()).slice(2, 9)}`;
+  const clipPathId = `${graphId}-clip`;
+  const resetStyles = `
+  #${graphId} * {
+    pointer-events: none;
+  }`;
+  return /* @__PURE__ */ jsxs(
+    "svg",
+    {
+      ref,
+      id: graphId,
+      className,
+      viewBox: `0 0 ${outerWidth} ${outerHeight}`,
+      style: {
+        width: outerWidth,
+        height: outerHeight,
+        position: "relative",
+        verticalAlign: "middle",
+        userSelect: "none",
+        ...style
+      },
+      children: [
+        /* @__PURE__ */ jsxs("defs", { children: [
+          /* @__PURE__ */ jsx("style", { children: resetStyles }),
+          /* @__PURE__ */ jsx("clipPath", { id: clipPathId, children: /* @__PURE__ */ jsx(
+            "rect",
+            {
+              x: "0",
+              y: "0",
+              width: graphWidth,
+              height: graphHeight
+            }
+          ) })
+        ] }),
+        /* @__PURE__ */ jsx(
+          GraphProvider,
+          {
+            svgRef: ref,
+            width: graphWidth,
+            height: graphHeight,
+            outerWidth,
+            outerHeight,
+            padding,
+            theme: mergedTheme,
+            scale: mergedScale,
+            logScale,
+            clipPathId,
+            children: /* @__PURE__ */ jsxs("g", { transform: graphTransform, children: [
+              /* @__PURE__ */ jsx(GraphGradient, {}),
+              /* @__PURE__ */ jsx(GraphGainGrid, {}),
+              /* @__PURE__ */ jsx(GraphFrequencyGrid, {}),
+              children
+            ] })
+          }
+        )
+      ]
+    }
+  );
+});
+
+const GraphInputGrid = () => {
+  const {
+    height,
+    padding,
+    logScale,
+    scale: {
+      minGain,
+      maxGain,
+      displayMinGain,
+      displayMaxGain,
+      dbSteps,
+      dbLabels,
+      dbLabelSteps
+    },
+    theme: {
+      background: {
+        grid: { dotted, lineColor, lineWidth },
+        label: { color: labelColor, fontSize, fontFamily }
+      }
+    }
+  } = useGraph();
+  if (!dbSteps) return null;
+  const steps = dbSteps || maxGain;
+  const labelEvery = dbLabelSteps && dbLabelSteps > 0 ? Math.max(1, Math.round(dbLabelSteps / steps)) : 1;
+  const inputMin = typeof displayMinGain === "number" ? displayMinGain : minGain;
+  const inputMax = typeof displayMaxGain === "number" ? displayMaxGain : maxGain;
+  const dBs = Array.from(
+    { length: (inputMax - inputMin) / steps + 1 },
+    (_, i) => inputMin + i * steps
+  );
+  const strokeDasharray = "1,2";
+  const labelY = height + padding.bottom - 4;
+  return /* @__PURE__ */ jsxs(Fragment, { children: [
+    dBs.map((tick, index) => {
+      const tickX = logScale.x(tick);
+      const tickLabel = tick > 0 ? `+${tick}` : tick;
+      const showLabel = dbLabels && index % labelEvery === 0;
+      return /* @__PURE__ */ jsxs(React.Fragment, { children: [
+        /* @__PURE__ */ jsx(
+          "line",
+          {
+            x1: tickX,
+            x2: tickX,
+            y1: "0",
+            y2: height,
+            stroke: lineColor,
+            strokeWidth: lineWidth.minor,
+            ...dotted ? { strokeDasharray } : {}
+          }
+        ),
+        showLabel && /* @__PURE__ */ jsx(
+          "text",
+          {
+            x: tickX,
+            y: labelY,
+            textAnchor: "middle",
+            fill: labelColor,
+            fontSize,
+            fontFamily,
+            children: tickLabel
+          }
+        )
+      ] }, tick);
+    }),
+    inputMin <= 0 && inputMax >= 0 && /* @__PURE__ */ jsx(
+      "line",
+      {
+        x1: logScale.x(0),
+        x2: logScale.x(0),
+        y1: "0",
+        y2: height,
+        stroke: lineColor,
+        strokeWidth: lineWidth.center,
+        ...dotted ? { strokeDasharray } : {}
+      }
+    )
+  ] });
+};
+
+const DRCGraph = forwardRef(
+  (props, forwardedRef) => {
+    const ref = useRef(null);
+    useImperativeHandle(forwardedRef, () => ref.current);
+    const {
+      width,
+      height,
+      scale = {},
+      theme = {},
+      style = {},
+      className = "",
+      children
+    } = props;
+    const mergedTheme = merge(defaultTheme, theme);
+    const mergedScale = merge(defaultScale, scale, {
+      arrayMerge: (_, source) => source
+      // overwrite arrays
+    });
+    const {
+      background: { padding }
+    } = mergedTheme;
+    const { minGain, maxGain, displayMinGain, displayMaxGain } = mergedScale;
+    const inputMin = typeof displayMinGain === "number" ? displayMinGain : minGain;
+    const inputMax = typeof displayMaxGain === "number" ? displayMaxGain : maxGain;
+    const graphWidth = Math.max(width - padding.left - padding.right, 0);
+    const graphHeight = Math.max(height - padding.top - padding.bottom, 0);
+    const linearScale = getLinearScaleFn(inputMin, inputMax, graphWidth);
+    DRCGraph.displayName = "DRCGraph";
+    const outerWidth = width;
+    const outerHeight = height;
+    const graphTransform = `translate(${padding.left}, ${padding.top})`;
+    const graphId = `drc-graph-${String(Math.random()).slice(2, 9)}`;
+    const clipPathId = `${graphId}-clip`;
+    const resetStyles = `
+  #${graphId} * {
+    pointer-events: none;
+  }`;
+    return /* @__PURE__ */ jsxs(
+      "svg",
+      {
+        ref,
+        id: graphId,
+        className,
+        viewBox: `0 0 ${outerWidth} ${outerHeight}`,
+        style: {
+          width: outerWidth,
+          height: outerHeight,
+          position: "relative",
+          verticalAlign: "middle",
+          userSelect: "none",
+          ...style
+        },
+        children: [
+          /* @__PURE__ */ jsxs("defs", { children: [
+            /* @__PURE__ */ jsx("style", { children: resetStyles }),
+            /* @__PURE__ */ jsx("clipPath", { id: clipPathId, children: /* @__PURE__ */ jsx(
+              "rect",
+              {
+                x: "0",
+                y: "0",
+                width: graphWidth,
+                height: graphHeight
+              }
+            ) })
+          ] }),
+          /* @__PURE__ */ jsx(
+            GraphProvider,
+            {
+              svgRef: ref,
+              width: graphWidth,
+              height: graphHeight,
+              outerWidth,
+              outerHeight,
+              padding,
+              theme: mergedTheme,
+              scale: mergedScale,
+              logScale: linearScale,
+              clipPathId,
+              children: /* @__PURE__ */ jsxs("g", { transform: graphTransform, children: [
+                /* @__PURE__ */ jsx(GraphGradient, {}),
+                /* @__PURE__ */ jsx(GraphGainGrid, {}),
+                /* @__PURE__ */ jsx(GraphInputGrid, {}),
+                children
+              ] })
+            }
+          )
+        ]
+      }
+    );
+  }
+);
+
 const easingSplines = {
   // Standard CSS easing values translated to SVG keySplines format
   linear: "0 0 1 1",
   easeIn: "0.42 0 1 1",
   easeOut: "0 0 0.58 1",
   easeInOut: "0.42 0 0.58 1"
+};
+
+const FrequencyResponseCurve = ({
+  magnitudes,
+  dotted = false,
+  color,
+  opacity,
+  lineWidth,
+  gradientId,
+  className,
+  style,
+  animate = false,
+  easing = "easeInOut",
+  duration = 300
+  // ms
+}) => {
+  const {
+    scale,
+    width,
+    height,
+    theme: { curve },
+    clipPathId
+  } = useGraph();
+  const curveColor = color || curve.color;
+  const curveWidth = lineWidth || curve.width;
+  const curveOpacity = opacity || curve.opacity;
+  const { currentPath, initialPath } = useMemo(() => {
+    const points = scaleMagnitudes(magnitudes, scale, width, height);
+    const flatPoints = points.map((p) => ({ x: p.x, y: height / 2 }));
+    const currentPath2 = plotCurve(points, scale, width, height);
+    const initialPath2 = plotCurve(flatPoints, scale, width, height);
+    return { currentPath: currentPath2, initialPath: initialPath2 };
+  }, [magnitudes, scale, width, height]);
+  const animateRef = useRef(null);
+  const [fromPath, setFromPath] = useState(initialPath);
+  const [toPath, setToPath] = useState(initialPath);
+  useLayoutEffect(() => {
+    if (animate) {
+      setFromPath(toPath);
+      animateRef.current?.beginElement();
+      requestAnimationFrame(() => {
+        setToPath(currentPath);
+      });
+    }
+  }, [currentPath, animate]);
+  return /* @__PURE__ */ jsx(
+    "path",
+    {
+      d: animate ? fromPath : currentPath,
+      stroke: curveColor,
+      strokeWidth: curveWidth,
+      strokeOpacity: curveOpacity,
+      strokeLinecap: "round",
+      clipPath: `url(#${clipPathId})`,
+      ...dotted ? { strokeDasharray: "1,3" } : {},
+      fill: gradientId ? `url(#${gradientId})` : "none",
+      className,
+      style,
+      children: animate && /* @__PURE__ */ jsx(
+        "animate",
+        {
+          ref: animateRef,
+          from: fromPath,
+          to: toPath,
+          fill: "freeze",
+          repeatCount: "1",
+          attributeName: "d",
+          dur: `${duration}ms`,
+          calcMode: "spline",
+          keyTimes: "0;1",
+          keySplines: easingSplines[easing],
+          additive: "replace",
+          accumulate: "none"
+        }
+      )
+    }
+  );
+};
+
+const DRCCurve = ({
+  threshold,
+  ratio,
+  knee = 0,
+  makeup = 0,
+  attack,
+  release,
+  inputMin,
+  inputMax,
+  resolutionFactor = 2,
+  ...curveProps
+}) => {
+  const {
+    scale: { minGain, maxGain, displayMinGain, displayMaxGain },
+    width
+  } = useGraph();
+  const inputMinValue = typeof inputMin === "number" ? inputMin : typeof displayMinGain === "number" ? displayMinGain : minGain;
+  const inputMaxValue = typeof inputMax === "number" ? inputMax : typeof displayMaxGain === "number" ? displayMaxGain : maxGain;
+  const safeResolution = Math.max(1, resolutionFactor || 1);
+  const steps = Math.max(2, Math.round(width / safeResolution));
+  const magnitudes = useMemo(
+    () => calcDrcMagnitudes({
+      threshold,
+      ratio,
+      knee,
+      makeup,
+      inputMin: inputMinValue,
+      inputMax: inputMaxValue,
+      steps
+    }),
+    [threshold, ratio, knee, makeup, inputMinValue, inputMaxValue, steps]
+  );
+  return /* @__PURE__ */ jsx(
+    FrequencyResponseCurve,
+    {
+      magnitudes,
+      ...curveProps
+    }
+  );
 };
 
 const FilterCurve = ({
@@ -1608,8 +1947,12 @@ const FilterPoint = ({
   const labelRef = useRef(null);
   const [hovered, setHovered] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const [zeroGain, passFilter] = useMemo(
-    () => [getZeroGain(type), type.includes("PASS") || type === "NOTCH"],
+  const [zeroGain, passFilter, zeroQ] = useMemo(
+    () => [
+      getZeroGain(type),
+      type.includes("PASS") || type === "NOTCH",
+      getZeroQ(type)
+    ],
     [type]
   );
   const x = limitRange(logScale.x(filterFreq), minX, maxX);
@@ -1762,7 +2105,7 @@ const FilterPoint = ({
     e.preventDefault();
     e.stopPropagation();
     if ("button" in e && e.button === 2) {
-      startQDrag(e);
+      if (!zeroQ) startQDrag(e);
       return;
     }
     const svg = svgRef.current;
@@ -1800,7 +2143,7 @@ const FilterPoint = ({
   };
   useEffect(() => {
     const circle = circleRef.current;
-    if (!wheelQ || !circle) return;
+    if (!wheelQ || !circle || zeroQ) return;
     const handleWheel = (e) => {
       e.preventDefault();
       let newQ = filterQ;
@@ -1816,6 +2159,7 @@ const FilterPoint = ({
     };
   }, [
     wheelQ,
+    zeroQ,
     filterQ,
     minQ,
     maxQ,
@@ -1885,83 +2229,6 @@ const FilterPoint = ({
       }
     )
   ] });
-};
-
-const FrequencyResponseCurve = ({
-  magnitudes,
-  dotted = false,
-  color,
-  opacity,
-  lineWidth,
-  gradientId,
-  className,
-  style,
-  animate = false,
-  easing = "easeInOut",
-  duration = 300
-  // ms
-}) => {
-  const {
-    scale,
-    width,
-    height,
-    theme: { curve },
-    clipPathId
-  } = useGraph();
-  const curveColor = color || curve.color;
-  const curveWidth = lineWidth || curve.width;
-  const curveOpacity = opacity || curve.opacity;
-  const { currentPath, initialPath } = useMemo(() => {
-    const points = scaleMagnitudes(magnitudes, scale, width, height);
-    const flatPoints = points.map((p) => ({ x: p.x, y: height / 2 }));
-    const currentPath2 = plotCurve(points, scale, width, height);
-    const initialPath2 = plotCurve(flatPoints, scale, width, height);
-    return { currentPath: currentPath2, initialPath: initialPath2 };
-  }, [magnitudes, scale, width, height]);
-  const animateRef = useRef(null);
-  const [fromPath, setFromPath] = useState(initialPath);
-  const [toPath, setToPath] = useState(initialPath);
-  useLayoutEffect(() => {
-    if (animate) {
-      setFromPath(toPath);
-      animateRef.current?.beginElement();
-      requestAnimationFrame(() => {
-        setToPath(currentPath);
-      });
-    }
-  }, [currentPath, animate]);
-  return /* @__PURE__ */ jsx(
-    "path",
-    {
-      d: animate ? fromPath : currentPath,
-      stroke: curveColor,
-      strokeWidth: curveWidth,
-      strokeOpacity: curveOpacity,
-      strokeLinecap: "round",
-      clipPath: `url(#${clipPathId})`,
-      ...dotted ? { strokeDasharray: "1,3" } : {},
-      fill: gradientId ? `url(#${gradientId})` : "none",
-      className,
-      style,
-      children: animate && /* @__PURE__ */ jsx(
-        "animate",
-        {
-          ref: animateRef,
-          from: fromPath,
-          to: toPath,
-          fill: "freeze",
-          repeatCount: "1",
-          attributeName: "d",
-          dur: `${duration}ms`,
-          calcMode: "spline",
-          keyTimes: "0;1",
-          keySplines: easingSplines[easing],
-          additive: "replace",
-          accumulate: "none"
-        }
-      )
-    }
-  );
 };
 
 const PointerTracker = ({
@@ -2154,4 +2421,4 @@ const PointerTracker = ({
   ] });
 };
 
-export { BandPassIcon, BypassIcon, CompositeCurve, FilterCurve, FilterGradient, FilterIcon, FilterPin, FilterPoint, FrequencyResponseCurve, FrequencyResponseGraph, GainIcon, GraphContext, GraphFrequencyGrid, GraphGainGrid, GraphGradient, GraphProvider, HighPassIcon, HighShelfIcon, LowPassIcon, LowShelfIcon, NotchIcon, PeakIcon, PointerTracker, calcAmplitudeForFrequency, calcBiQuadCoefficients, calcCompositeMagnitudes, calcFilterCoefficients, calcFilterMagnitudes, calcFrequency, calcMagnitude, calcMagnitudeForFrequency, calcMagnitudes, calcStandardDeviation, defaultScale, defaultTheme, directions, fastFloor, fastRound, filterTypeKeys, filterTypes, getCenterLine, getIconStyles, getIconSymbol, getLogScaleFn, getPointerPosition, getZeroFreq, getZeroGain, getZeroQ, limitRange, plotCurve, reducePoints, scaleMagnitude, scaleMagnitudes, stripTail, useGraph };
+export { BandPassIcon, BypassIcon, CompositeCurve, DRCCurve, DRCGraph, FilterCurve, FilterGradient, FilterIcon, FilterPin, FilterPoint, FrequencyResponseCurve, FrequencyResponseGraph, GainIcon, GraphContext, GraphFrequencyGrid, GraphGainGrid, GraphGradient, GraphInputGrid, GraphProvider, HighPassIcon, HighShelfIcon, LowPassIcon, LowShelfIcon, NotchIcon, PeakIcon, PointerTracker, calcAmplitudeForFrequency, calcBiQuadCoefficients, calcCompositeMagnitudes, calcDrcMagnitudes, calcDrcOutput, calcFilterCoefficients, calcFilterMagnitudes, calcFrequency, calcMagnitude, calcMagnitudeForFrequency, calcMagnitudes, calcStandardDeviation, defaultScale, defaultTheme, directions, fastFloor, fastRound, filterTypeKeys, filterTypes, getCenterLine, getIconStyles, getIconSymbol, getLinearScaleFn, getLogScaleFn, getPointerPosition, getZeroFreq, getZeroGain, getZeroQ, limitRange, plotCurve, reducePoints, scaleMagnitude, scaleMagnitudes, stripTail, useGraph };

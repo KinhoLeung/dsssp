@@ -32,10 +32,8 @@ export const GraphInputGrid = () => {
       ? Math.max(1, Math.round(dbLabelSteps / steps))
       : 1
 
-  const inputMin =
-    typeof displayMinGain === 'number' ? displayMinGain : minGain
-  const inputMax =
-    typeof displayMaxGain === 'number' ? displayMaxGain : maxGain
+  const inputMin = typeof displayMinGain === 'number' ? displayMinGain : minGain
+  const inputMax = typeof displayMaxGain === 'number' ? displayMaxGain : maxGain
 
   const dBs = Array.from(
     { length: (inputMax - inputMin) / steps + 1 },

@@ -71,15 +71,7 @@ export const DRCCurve = ({
         inputMax: inputMaxValue,
         steps
       }),
-    [
-      threshold,
-      ratio,
-      knee,
-      makeup,
-      inputMinValue,
-      inputMaxValue,
-      steps
-    ]
+    [threshold, ratio, knee, makeup, inputMinValue, inputMaxValue, steps]
   )
 
   return (

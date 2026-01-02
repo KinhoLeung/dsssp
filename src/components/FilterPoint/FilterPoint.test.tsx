@@ -5,8 +5,9 @@ import { FilterPoint } from '.'
 import { FrequencyResponseGraph, type GraphFilter } from '../..'
 
 beforeEach(() => {
-  ;(SVGSVGElement.prototype as unknown as { getScreenCTM: () => unknown }).getScreenCTM =
-    () => ({ a: 1, d: 1, e: 0, f: 0 })
+  ;(
+    SVGSVGElement.prototype as unknown as { getScreenCTM: () => unknown }
+  ).getScreenCTM = () => ({ a: 1, d: 1, e: 0, f: 0 })
 })
 
 describe('FilterPoint Q interactions', () => {
@@ -15,8 +16,14 @@ describe('FilterPoint Q interactions', () => {
     const filter: GraphFilter = { type: 'GAIN', freq: 1000, gain: 0, q: 1 }
 
     const { container } = render(
-      <FrequencyResponseGraph width={800} height={400}>
-        <FilterPoint filter={filter} onChange={onChange} />
+      <FrequencyResponseGraph
+        width={800}
+        height={400}
+      >
+        <FilterPoint
+          filter={filter}
+          onChange={onChange}
+        />
       </FrequencyResponseGraph>
     )
 
@@ -32,8 +39,14 @@ describe('FilterPoint Q interactions', () => {
     const filter: GraphFilter = { type: 'GAIN', freq: 1000, gain: 0, q: 1 }
 
     const { container } = render(
-      <FrequencyResponseGraph width={800} height={400}>
-        <FilterPoint filter={filter} onChange={onChange} />
+      <FrequencyResponseGraph
+        width={800}
+        height={400}
+      >
+        <FilterPoint
+          filter={filter}
+          onChange={onChange}
+        />
       </FrequencyResponseGraph>
     )
 
@@ -54,8 +67,14 @@ describe('FilterPoint Q interactions', () => {
     const filter: GraphFilter = { type: 'PEAK', freq: 1000, gain: 0, q: 1 }
 
     const { container } = render(
-      <FrequencyResponseGraph width={800} height={400}>
-        <FilterPoint filter={filter} onChange={onChange} />
+      <FrequencyResponseGraph
+        width={800}
+        height={400}
+      >
+        <FilterPoint
+          filter={filter}
+          onChange={onChange}
+        />
       </FrequencyResponseGraph>
     )
 
@@ -71,4 +90,3 @@ describe('FilterPoint Q interactions', () => {
     })
   })
 })
-

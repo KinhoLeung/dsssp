@@ -1,4 +1,5 @@
 export * from './CompositeCurve';
+export * from './DRCGraph';
 export * from './FilterCurve';
 export * from './FilterGradient';
 export * from './FilterIcon';

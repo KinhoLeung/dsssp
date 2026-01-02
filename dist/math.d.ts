@@ -1,14 +1,22 @@
-import { BiQuadCoefficients, FilterType, GraphFilter, GraphPoint, GraphScale, LogScaleFunction, Magnitude } from './types';
+import { BiQuadCoefficients, DrcSettings, FilterType, GraphFilter, GraphPoint, GraphScale, LogScaleFunction, Magnitude } from './types';
 export declare const fastFloor: (x: number) => number;
 export declare const fastRound: (x: number) => number;
 export declare const stripTail: (x: number, decimals?: number) => number;
 export declare const getLogScaleFn: (minFreq: number, maxFreq: number, width: number) => LogScaleFunction;
+export declare const getLinearScaleFn: (min: number, max: number, width: number) => LogScaleFunction;
 export declare function calcBiQuadCoefficients(type: FilterType, frequency: number, peakGain: number, Q?: number, sampleRate?: number): BiQuadCoefficients;
 export declare function calcMagnitudeForFrequency(vars: BiQuadCoefficients, width: number, sampleRate?: number): number;
 export declare function calcAmplitudeForFrequency(gain: number): number;
 export declare function calcStandardDeviation(values: number[]): number;
 export declare const calcFrequency: (index: number, length: number, minFreq: number, maxFreq: number) => number;
 export declare function calcMagnitudes(vars: BiQuadCoefficients, steps: number, minFreq: number, maxFreq: number, sampleRate?: number): Magnitude[];
+type DrcCurveParams = DrcSettings & {
+    inputMin: number;
+    inputMax: number;
+    steps: number;
+};
+export declare const calcDrcOutput: (input: number, threshold: number, ratio: number, knee?: number) => number;
+export declare const calcDrcMagnitudes: ({ threshold, ratio, knee, makeup, inputMin, inputMax, steps }: DrcCurveParams) => Magnitude[];
 export declare const reducePoints: (points: GraphPoint[]) => (GraphPoint | undefined)[];
 export declare const getCenterLine: (minGain: number, maxGain: number, height: number) => number;
 export declare const scaleMagnitude: (magnitude: number, minGain: number, maxGain: number, height: number) => number;
@@ -19,4 +27,5 @@ export declare const calcFilterCoefficients: (filter: GraphFilter, sampleRate?: 
 export declare const calcFilterMagnitudes: (vars: BiQuadCoefficients, scale: GraphScale, width: number, precisionDivider?: number) => Magnitude[];
 export declare const calcCompositeMagnitudes: (magnitudes: Magnitude[][]) => Magnitude[];
 export declare const limitRange: (value: number, min: number, max: number) => number;
+export {};
 //# sourceMappingURL=math.d.ts.map

@@ -17,7 +17,12 @@ import {
   stripTail
 } from '../../math'
 import { type GraphFilter } from '../../types'
-import { getIconStyles, getIconSymbol, getZeroGain, getZeroQ } from '../../utils'
+import {
+  getIconStyles,
+  getIconSymbol,
+  getZeroGain,
+  getZeroQ
+} from '../../utils'
 import { useGraph } from '../..'
 
 import '../../icons/font.css'
