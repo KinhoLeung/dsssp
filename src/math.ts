@@ -96,6 +96,11 @@ export function calcBiQuadCoefficients(
   peakGain = Math.max(-120, Math.min(peakGain, 120)) // Limit gain range
 
   const V = 10 ** (Math.abs(peakGain) / 20)
+  const shelfA = 10 ** (peakGain / 40)
+  const omega = (2 * Math.PI * frequency) / sampleRate
+  const sinOmega = Math.sin(omega)
+  const cosOmega = Math.cos(omega)
+  const shelfAlpha = sinOmega / (2 * Q)
   const K = Math.tan((Math.PI * frequency) / sampleRate)
 
   switch (type) {
@@ -144,21 +149,22 @@ export function calcBiQuadCoefficients(
       }
       break
     case 'LOWSHELF2':
-      if (peakGain >= 0) {
-        norm = 1 / (1 + Math.SQRT2 * K + K * K)
-        A0 = (1 + Math.sqrt(2 * V) * K + V * K * K) * norm
-        A1 = 2 * (V * K * K - 1) * norm
-        A2 = (1 - Math.sqrt(2 * V) * K + V * K * K) * norm
-        B1 = 2 * (K * K - 1) * norm
-        B2 = (1 - Math.SQRT2 * K + K * K) * norm
-      } else {
-        norm = 1 / (1 + Math.sqrt(2 * V) * K + V * K * K)
-        A0 = (1 + Math.SQRT2 * K + K * K) * norm
-        A1 = 2 * (K * K - 1) * norm
-        A2 = (1 - Math.SQRT2 * K + K * K) * norm
-        B1 = 2 * (V * K * K - 1) * norm
-        B2 = (1 - Math.sqrt(2 * V) * K + V * K * K) * norm
-      }
+      norm =
+        1 /
+        (shelfA + 1 + (shelfA - 1) * cosOmega + 2 * Math.sqrt(shelfA) * shelfAlpha)
+      A0 =
+        shelfA *
+        (shelfA + 1 - (shelfA - 1) * cosOmega + 2 * Math.sqrt(shelfA) * shelfAlpha) *
+        norm
+      A1 = 2 * shelfA * (shelfA - 1 - (shelfA + 1) * cosOmega) * norm
+      A2 =
+        shelfA *
+        (shelfA + 1 - (shelfA - 1) * cosOmega - 2 * Math.sqrt(shelfA) * shelfAlpha) *
+        norm
+      B1 = -2 * (shelfA - 1 + (shelfA + 1) * cosOmega) * norm
+      B2 =
+        (shelfA + 1 + (shelfA - 1) * cosOmega - 2 * Math.sqrt(shelfA) * shelfAlpha) *
+        norm
       break
 
     case 'HIGHSHELF1':
@@ -179,21 +185,22 @@ export function calcBiQuadCoefficients(
       }
       break
     case 'HIGHSHELF2':
-      if (peakGain >= 0) {
-        norm = 1 / (1 + Math.SQRT2 * K + K * K)
-        A0 = (V + Math.sqrt(2 * V) * K + K * K) * norm
-        A1 = 2 * (K * K - V) * norm
-        A2 = (V - Math.sqrt(2 * V) * K + K * K) * norm
-        B1 = 2 * (K * K - 1) * norm
-        B2 = (1 - Math.SQRT2 * K + K * K) * norm
-      } else {
-        norm = 1 / (V + Math.sqrt(2 * V) * K + K * K)
-        A0 = (1 + Math.SQRT2 * K + K * K) * norm
-        A1 = 2 * (K * K - 1) * norm
-        A2 = (1 - Math.SQRT2 * K + K * K) * norm
-        B1 = 2 * (K * K - V) * norm
-        B2 = (V - Math.sqrt(2 * V) * K + K * K) * norm
-      }
+      norm =
+        1 /
+        (shelfA + 1 - (shelfA - 1) * cosOmega + 2 * Math.sqrt(shelfA) * shelfAlpha)
+      A0 =
+        shelfA *
+        (shelfA + 1 + (shelfA - 1) * cosOmega + 2 * Math.sqrt(shelfA) * shelfAlpha) *
+        norm
+      A1 = -2 * shelfA * (shelfA - 1 + (shelfA + 1) * cosOmega) * norm
+      A2 =
+        shelfA *
+        (shelfA + 1 + (shelfA - 1) * cosOmega - 2 * Math.sqrt(shelfA) * shelfAlpha) *
+        norm
+      B1 = 2 * (shelfA - 1 - (shelfA + 1) * cosOmega) * norm
+      B2 =
+        (shelfA + 1 - (shelfA - 1) * cosOmega - 2 * Math.sqrt(shelfA) * shelfAlpha) *
+        norm
       break
 
     case 'LOWPASS1':

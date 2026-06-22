@@ -243,6 +243,11 @@ function calcBiQuadCoefficients(type, frequency, peakGain, Q = 0.707, sampleRate
   Q = Math.max(1e-4, Q);
   peakGain = Math.max(-120, Math.min(peakGain, 120));
   const V = 10 ** (Math.abs(peakGain) / 20);
+  const shelfA = 10 ** (peakGain / 40);
+  const omega = 2 * Math.PI * frequency / sampleRate;
+  const sinOmega = Math.sin(omega);
+  const cosOmega = Math.cos(omega);
+  const shelfAlpha = sinOmega / (2 * Q);
   const K = Math.tan(Math.PI * frequency / sampleRate);
   switch (type) {
     case "NOTCH":
@@ -288,21 +293,12 @@ function calcBiQuadCoefficients(type, frequency, peakGain, Q = 0.707, sampleRate
       }
       break;
     case "LOWSHELF2":
-      if (peakGain >= 0) {
-        norm = 1 / (1 + Math.SQRT2 * K + K * K);
-        A0 = (1 + Math.sqrt(2 * V) * K + V * K * K) * norm;
-        A1 = 2 * (V * K * K - 1) * norm;
-        A2 = (1 - Math.sqrt(2 * V) * K + V * K * K) * norm;
-        B1 = 2 * (K * K - 1) * norm;
-        B2 = (1 - Math.SQRT2 * K + K * K) * norm;
-      } else {
-        norm = 1 / (1 + Math.sqrt(2 * V) * K + V * K * K);
-        A0 = (1 + Math.SQRT2 * K + K * K) * norm;
-        A1 = 2 * (K * K - 1) * norm;
-        A2 = (1 - Math.SQRT2 * K + K * K) * norm;
-        B1 = 2 * (V * K * K - 1) * norm;
-        B2 = (1 - Math.sqrt(2 * V) * K + V * K * K) * norm;
-      }
+      norm = 1 / (shelfA + 1 + (shelfA - 1) * cosOmega + 2 * Math.sqrt(shelfA) * shelfAlpha);
+      A0 = shelfA * (shelfA + 1 - (shelfA - 1) * cosOmega + 2 * Math.sqrt(shelfA) * shelfAlpha) * norm;
+      A1 = 2 * shelfA * (shelfA - 1 - (shelfA + 1) * cosOmega) * norm;
+      A2 = shelfA * (shelfA + 1 - (shelfA - 1) * cosOmega - 2 * Math.sqrt(shelfA) * shelfAlpha) * norm;
+      B1 = -2 * (shelfA - 1 + (shelfA + 1) * cosOmega) * norm;
+      B2 = (shelfA + 1 + (shelfA - 1) * cosOmega - 2 * Math.sqrt(shelfA) * shelfAlpha) * norm;
       break;
     case "HIGHSHELF1":
       if (peakGain >= 0) {
@@ -322,21 +318,12 @@ function calcBiQuadCoefficients(type, frequency, peakGain, Q = 0.707, sampleRate
       }
       break;
     case "HIGHSHELF2":
-      if (peakGain >= 0) {
-        norm = 1 / (1 + Math.SQRT2 * K + K * K);
-        A0 = (V + Math.sqrt(2 * V) * K + K * K) * norm;
-        A1 = 2 * (K * K - V) * norm;
-        A2 = (V - Math.sqrt(2 * V) * K + K * K) * norm;
-        B1 = 2 * (K * K - 1) * norm;
-        B2 = (1 - Math.SQRT2 * K + K * K) * norm;
-      } else {
-        norm = 1 / (V + Math.sqrt(2 * V) * K + K * K);
-        A0 = (1 + Math.SQRT2 * K + K * K) * norm;
-        A1 = 2 * (K * K - 1) * norm;
-        A2 = (1 - Math.SQRT2 * K + K * K) * norm;
-        B1 = 2 * (K * K - V) * norm;
-        B2 = (V - Math.sqrt(2 * V) * K + K * K) * norm;
-      }
+      norm = 1 / (shelfA + 1 - (shelfA - 1) * cosOmega + 2 * Math.sqrt(shelfA) * shelfAlpha);
+      A0 = shelfA * (shelfA + 1 + (shelfA - 1) * cosOmega + 2 * Math.sqrt(shelfA) * shelfAlpha) * norm;
+      A1 = -2 * shelfA * (shelfA - 1 + (shelfA + 1) * cosOmega) * norm;
+      A2 = shelfA * (shelfA + 1 + (shelfA - 1) * cosOmega - 2 * Math.sqrt(shelfA) * shelfAlpha) * norm;
+      B1 = 2 * (shelfA - 1 - (shelfA + 1) * cosOmega) * norm;
+      B2 = (shelfA + 1 - (shelfA - 1) * cosOmega - 2 * Math.sqrt(shelfA) * shelfAlpha) * norm;
       break;
     case "LOWPASS1":
       norm = 1 / (1 / K + 1);
@@ -729,7 +716,7 @@ const getZeroGain = (type) => [
   "BYPASS",
   "NOTCH"
 ].includes(type) || !type;
-const getZeroQ = (type) => ["HIGHPASS1", "LOWPASS1", "BYPASS", "GAIN"].includes(type) || !type;
+const getZeroQ = (type) => ["LOWSHELF1", "HIGHSHELF1", "HIGHPASS1", "LOWPASS1", "BYPASS", "GAIN"].includes(type) || !type;
 const getIconStyles = (type, gain = 0) => String(type).includes("SHELF") && gain > 0 || type === "PEAK" && gain < 0 || type === "GAIN" && gain < 0 ? {
   transform: "scale(1, -1)",
   transformBox: "fill-box",
