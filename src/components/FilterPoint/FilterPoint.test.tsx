@@ -62,6 +62,44 @@ describe('FilterPoint Q interactions', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
+  it('adjusts Q via wheel for shelf filter types', () => {
+    const shelfTypes: GraphFilter['type'][] = [
+      'LOWSHELF1',
+      'LOWSHELF2',
+      'HIGHSHELF1',
+      'HIGHSHELF2'
+    ]
+
+    shelfTypes.forEach((type) => {
+      const onChange = vi.fn()
+      const filter: GraphFilter = { type, freq: 1000, gain: 0, q: 1 }
+
+      const { container, unmount } = render(
+        <FrequencyResponseGraph
+          width={800}
+          height={400}
+        >
+          <FilterPoint
+            filter={filter}
+            onChange={onChange}
+          />
+        </FrequencyResponseGraph>
+      )
+
+      const circle = container.querySelector('circle')
+      expect(circle).not.toBeNull()
+
+      fireEvent.wheel(circle!, { deltaY: 100 })
+      expect(onChange).toHaveBeenCalledTimes(1)
+      expect(onChange.mock.calls[0]?.[0]).toMatchObject({
+        type,
+        q: 1.1,
+        ended: true
+      })
+
+      unmount()
+    })
+  })
   it('adjusts Q via wheel for filter types with Q support', () => {
     const onChange = vi.fn()
     const filter: GraphFilter = { type: 'PEAK', freq: 1000, gain: 0, q: 1 }

@@ -39,16 +39,7 @@ export const getZeroGain = (type: FilterType) =>
   ].includes(type) || !type
 
 export const getZeroQ = (type: FilterType) =>
-  [
-    'LOWSHELF1',
-    'LOWSHELF2',
-    'HIGHSHELF1',
-    'HIGHSHELF2',
-    'HIGHPASS1',
-    'LOWPASS1',
-    'BYPASS',
-    'GAIN'
-  ].includes(type) || !type
+  ['HIGHPASS1', 'LOWPASS1', 'BYPASS', 'GAIN'].includes(type) || !type
 
 export const getIconStyles = (
   type: FilterType | undefined | null,

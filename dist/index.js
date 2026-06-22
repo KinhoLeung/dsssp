@@ -725,16 +725,7 @@ const getZeroGain = (type) => [
   "BYPASS",
   "NOTCH"
 ].includes(type) || !type;
-const getZeroQ = (type) => [
-  "LOWSHELF1",
-  "LOWSHELF2",
-  "HIGHSHELF1",
-  "HIGHSHELF2",
-  "HIGHPASS1",
-  "LOWPASS1",
-  "BYPASS",
-  "GAIN"
-].includes(type) || !type;
+const getZeroQ = (type) => ["HIGHPASS1", "LOWPASS1", "BYPASS", "GAIN"].includes(type) || !type;
 const getIconStyles = (type, gain = 0) => String(type).includes("SHELF") && gain > 0 || type === "PEAK" && gain < 0 || type === "GAIN" && gain < 0 ? {
   transform: "scale(1, -1)",
   transformBox: "fill-box",
