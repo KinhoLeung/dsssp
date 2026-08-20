@@ -17,5 +17,5 @@ export type DRCCurveProps = DefaultCurveProps & DrcSettings & {
 /**
  * Renders a dynamic range compression/expansion curve from threshold/ratio settings.
  */
-export declare const DRCCurve: ({ threshold, ratio, knee, makeup, attack, release, inputMin, inputMax, resolutionFactor, ...curveProps }: DRCCurveProps) => import("react/jsx-runtime").JSX.Element;
+export declare const DRCCurve: ({ threshold, ratio, knee, makeup, attack, release, inputMin, inputMax, resolutionFactor, ...curveProps }: DRCCurveProps) => import("react").JSX.Element;
 //# sourceMappingURL=DRCCurve.d.ts.map

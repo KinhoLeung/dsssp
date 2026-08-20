@@ -89,5 +89,5 @@ export type FilterCurveProps = DefaultCurveProps & ActiveStateProps & {
  * - Optional vertical pin
  * - Performance optimization
  **/
-export declare const FilterCurve: ({ filter, index, resolutionFactor, color, dotted, opacity, lineWidth, gradientId, showPin, showBypass, active, activeColor, activeOpacity, activeLineWidth, style, easing, animate, duration, className, onChange }: FilterCurveProps) => import("react/jsx-runtime").JSX.Element | null;
+export declare const FilterCurve: ({ filter, index, resolutionFactor, color, dotted, opacity, lineWidth, gradientId, showPin, showBypass, active, activeColor, activeOpacity, activeLineWidth, style, easing, animate, duration, className, onChange }: FilterCurveProps) => import("react").JSX.Element | null;
 //# sourceMappingURL=FilterCurve.d.ts.map

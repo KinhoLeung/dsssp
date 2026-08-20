@@ -193,5 +193,5 @@ export type FilterPointProps = {
  * Uses `defaultColor` from the theme as a fallback when filter colors are not specified.
  *
  */
-export declare const FilterPoint: ({ filter, index, dragX, dragY, wheelQ, minQ, maxQ, gainPrecision, qPrecision, active, showIcon, label, labelFontSize, labelFontFamily, labelColor, radius, lineWidth, color, zeroColor, dragColor, activeColor, background, zeroBackground, dragBackground, activeBackground, backgroundOpacity, dragBackgroundOpacity, activeBackgroundOpacity, className, style, onChange, onEnter, onLeave, onDoubleClick, onDrag }: FilterPointProps) => import("react/jsx-runtime").JSX.Element | null;
+export declare const FilterPoint: ({ filter, index, dragX, dragY, wheelQ, minQ, maxQ, gainPrecision, qPrecision, active, showIcon, label, labelFontSize, labelFontFamily, labelColor, radius, lineWidth, color, zeroColor, dragColor, activeColor, background, zeroBackground, dragBackground, activeBackground, backgroundOpacity, dragBackgroundOpacity, activeBackgroundOpacity, className, style, onChange, onEnter, onLeave, onDoubleClick, onDrag }: FilterPointProps) => import("react").JSX.Element | null;
 //# sourceMappingURL=FilterPoint.d.ts.map

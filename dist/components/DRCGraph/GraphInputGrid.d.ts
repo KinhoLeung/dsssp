@@ -1,2 +1,3 @@
-export declare const GraphInputGrid: () => import("react/jsx-runtime").JSX.Element | null;
+import { default as React } from 'react';
+export declare const GraphInputGrid: () => React.JSX.Element | null;
 //# sourceMappingURL=GraphInputGrid.d.ts.map

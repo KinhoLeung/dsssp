@@ -24,5 +24,5 @@ export declare const directions: {
         readonly y2: "0";
     };
 };
-export declare const GraphGradient: () => import("react/jsx-runtime").JSX.Element;
+export declare const GraphGradient: () => import("react").JSX.Element;
 //# sourceMappingURL=GraphGradient.d.ts.map

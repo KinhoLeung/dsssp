@@ -7,7 +7,7 @@ export declare const useGraph: () => {
     theme: import('../..').GraphTheme;
     scale: import('../..').GraphScale;
     logScale: import('../..').LogScaleFunction;
-    svgRef: React.RefObject<SVGSVGElement>;
+    svgRef: React.RefObject<SVGSVGElement | null>;
     clipPathId: string;
 };
 //# sourceMappingURL=useGraph.d.ts.map

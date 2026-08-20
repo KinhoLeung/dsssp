@@ -20,6 +20,6 @@ type CompositeCurveProps = DefaultCurveProps & {
  * Supports custom styling through color, opacity and line width props.
  * For better performance with many filters, adjust resolutionFactor.
  */
-export declare const CompositeCurve: ({ filters, resolutionFactor, color, dotted, opacity, lineWidth, gradientId, style, easing, animate, duration, className }: CompositeCurveProps) => import("react/jsx-runtime").JSX.Element | null;
+export declare const CompositeCurve: ({ filters, resolutionFactor, color, dotted, opacity, lineWidth, gradientId, style, easing, animate, duration, className }: CompositeCurveProps) => import("react").JSX.Element | null;
 export {};
 //# sourceMappingURL=CompositeCurve.d.ts.map

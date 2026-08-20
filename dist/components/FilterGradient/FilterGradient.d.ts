@@ -46,5 +46,5 @@ export type FilterGradientProps = {
  * Gradient direction automatically adjusts based on filter gain.
  * Used in conjunction with FilterCurve component.
  */
-export declare const FilterGradient: ({ id, filter, index, opacity, color, fill, className, style }: FilterGradientProps) => import("react/jsx-runtime").JSX.Element;
+export declare const FilterGradient: ({ id, filter, index, opacity, color, fill, className, style }: FilterGradientProps) => import("react").JSX.Element;
 //# sourceMappingURL=FilterGradient.d.ts.map

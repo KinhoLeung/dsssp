@@ -9,13 +9,13 @@ type GraphContextProps = {
     theme: GraphTheme;
     scale: GraphScale;
     logScale: LogScaleFunction;
-    svgRef: React.RefObject<SVGSVGElement>;
+    svgRef: React.RefObject<SVGSVGElement | null>;
     clipPathId: string;
 };
 export declare const GraphContext: React.Context<GraphContextProps | undefined>;
 export declare const GraphProvider: ({ children, svgRef, scale, logScale, height, width, outerHeight, outerWidth, theme, padding, clipPathId }: {
     children: React.ReactNode;
-    svgRef: React.RefObject<SVGSVGElement>;
+    svgRef: React.RefObject<SVGSVGElement | null>;
     theme: GraphTheme;
     scale: GraphScale;
     height: number;
@@ -25,6 +25,6 @@ export declare const GraphProvider: ({ children, svgRef, scale, logScale, height
     padding: GraphTheme["background"]["padding"];
     logScale: LogScaleFunction;
     clipPathId: string;
-}) => import("react/jsx-runtime").JSX.Element;
+}) => React.JSX.Element;
 export {};
 //# sourceMappingURL=GraphProvider.d.ts.map

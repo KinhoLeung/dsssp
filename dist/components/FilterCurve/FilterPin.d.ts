@@ -7,5 +7,5 @@ export type FilterPinProps = {
     opacity?: CSSProperties['opacity'];
     color?: CSSProperties['color'];
 };
-export declare const FilterPin: ({ filter, vars, opacity, lineWidth, color }: FilterPinProps) => import("react/jsx-runtime").JSX.Element | null;
+export declare const FilterPin: ({ filter, vars, opacity, lineWidth, color }: FilterPinProps) => import("react").JSX.Element | null;
 //# sourceMappingURL=FilterPin.d.ts.map

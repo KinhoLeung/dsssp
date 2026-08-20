@@ -40,14 +40,14 @@ export type FilterTypedIconProps = Omit<FilterIconProps, 'type'>;
  * Renders filter type icons using custom font symbols.
  * Icons automatically adjust their appearance based on filter gain.
  */
-export declare const FilterIcon: ({ color, size, gain, type, filter, className, ...style }: FilterIconProps) => import("react/jsx-runtime").JSX.Element;
-export declare const BypassIcon: (props: FilterTypedIconProps) => import("react/jsx-runtime").JSX.Element;
-export declare const LowPassIcon: (props: FilterTypedIconProps) => import("react/jsx-runtime").JSX.Element;
-export declare const HighPassIcon: (props: FilterTypedIconProps) => import("react/jsx-runtime").JSX.Element;
-export declare const LowShelfIcon: (props: FilterTypedIconProps) => import("react/jsx-runtime").JSX.Element;
-export declare const HighShelfIcon: (props: FilterTypedIconProps) => import("react/jsx-runtime").JSX.Element;
-export declare const BandPassIcon: (props: FilterTypedIconProps) => import("react/jsx-runtime").JSX.Element;
-export declare const NotchIcon: (props: FilterTypedIconProps) => import("react/jsx-runtime").JSX.Element;
-export declare const PeakIcon: (props: FilterTypedIconProps) => import("react/jsx-runtime").JSX.Element;
-export declare const GainIcon: (props: FilterTypedIconProps) => import("react/jsx-runtime").JSX.Element;
+export declare const FilterIcon: ({ color, size, gain, type, filter, className, ...style }: FilterIconProps) => import("react").JSX.Element;
+export declare const BypassIcon: (props: FilterTypedIconProps) => import("react").JSX.Element;
+export declare const LowPassIcon: (props: FilterTypedIconProps) => import("react").JSX.Element;
+export declare const HighPassIcon: (props: FilterTypedIconProps) => import("react").JSX.Element;
+export declare const LowShelfIcon: (props: FilterTypedIconProps) => import("react").JSX.Element;
+export declare const HighShelfIcon: (props: FilterTypedIconProps) => import("react").JSX.Element;
+export declare const BandPassIcon: (props: FilterTypedIconProps) => import("react").JSX.Element;
+export declare const NotchIcon: (props: FilterTypedIconProps) => import("react").JSX.Element;
+export declare const PeakIcon: (props: FilterTypedIconProps) => import("react").JSX.Element;
+export declare const GainIcon: (props: FilterTypedIconProps) => import("react").JSX.Element;
 //# sourceMappingURL=FilterIcon.d.ts.map

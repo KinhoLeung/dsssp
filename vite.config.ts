@@ -1,11 +1,13 @@
 /// <reference types="vitest" />
+import { writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-import react from '@vitejs/plugin-react-swc'
+import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import dts from 'vite-plugin-dts'
-import { viteStaticCopy } from 'vite-plugin-static-copy'
 
-import { peerDependencies } from './package.json'
+import { peerDependencies } from './package.json' with { type: 'json' }
+
+const rootDir = import.meta.dirname
 
 export default defineConfig({
   plugins: [
@@ -16,20 +18,21 @@ export default defineConfig({
       outDir: 'dist', // output declarations in dist
       entryRoot: 'src'
     }), // Output .d.ts files
-    viteStaticCopy({
-      targets: [
-        {
-          src: 'src/icons/font.d.ts',
-          dest: ''
-        }
-      ]
-    })
+    {
+      name: 'emit-font-dts',
+      closeBundle() {
+        writeFileSync(
+          resolve(rootDir, 'dist', 'font.d.ts'),
+          "declare module '*.css'\n"
+        )
+      }
+    }
   ],
   build: {
     target: 'esnext',
     minify: false,
     lib: {
-      entry: resolve(__dirname, join('src', 'index.ts')),
+      entry: resolve(rootDir, join('src', 'index.ts')),
       fileName: 'index',
       formats: ['es', 'cjs']
     },

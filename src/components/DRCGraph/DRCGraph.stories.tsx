@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react'
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import '@fontsource/iosevka-etoile'
 
 import { DRCGraph, DRCCurve } from '.'

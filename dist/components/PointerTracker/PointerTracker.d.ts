@@ -30,5 +30,5 @@ export type PointerTrackerProps = {
  * Displays frequency and gain values at the current pointer position.
  * Shows crosshair guides and value labels that follow the pointer.
  **/
-export declare const PointerTracker: ({ lineWidth, lineColor, labelColor, backgroundColor, gainPrecision }: PointerTrackerProps) => import("react/jsx-runtime").JSX.Element | null;
+export declare const PointerTracker: ({ lineWidth, lineColor, labelColor, backgroundColor, gainPrecision }: PointerTrackerProps) => import("react").JSX.Element | null;
 //# sourceMappingURL=PointerTracker.d.ts.map

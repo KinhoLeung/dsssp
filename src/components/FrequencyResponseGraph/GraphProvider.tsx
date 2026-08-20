@@ -18,7 +18,7 @@ type GraphContextProps = {
   theme: GraphTheme
   scale: GraphScale
   logScale: LogScaleFunction
-  svgRef: React.RefObject<SVGSVGElement>
+  svgRef: React.RefObject<SVGSVGElement | null>
   clipPathId: string
 }
 
@@ -40,7 +40,7 @@ export const GraphProvider = ({
   clipPathId
 }: {
   children: React.ReactNode
-  svgRef: React.RefObject<SVGSVGElement>
+  svgRef: React.RefObject<SVGSVGElement | null>
   theme: GraphTheme
   scale: GraphScale
   height: number

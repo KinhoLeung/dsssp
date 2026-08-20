@@ -8,8 +8,6 @@ const config: StorybookConfig = {
     '../src/**/*.docs.@(mdx|ts|tsx)'
   ],
   addons: [
-    '@storybook/addon-essentials',
-    '@storybook/addon-actions',
     {
       name: '@storybook/addon-docs',
       options: {
@@ -29,9 +27,14 @@ const config: StorybookConfig = {
 
   docs: {},
 
+  features: {
+    menuOnboardingChecklist: false,
+    sidebarOnboardingChecklist: false
+  },
+
   viteFinal: async (config) => ({
     ...config,
-    plugins: await withoutVitePlugins(config.plugins, ['vite:dts']) // skip dts plugin
+    plugins: await withoutVitePlugins(config.plugins, ['vite:dts'])
   }),
 
   typescript: {
