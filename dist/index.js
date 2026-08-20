@@ -1,4 +1,4 @@
-import React, { createContext, useMemo, useContext, useState, useCallback, useEffect, forwardRef, useRef, useImperativeHandle, useLayoutEffect } from 'react';
+import React, { createContext, useMemo, useContext, useState, useCallback, useEffect, forwardRef, useRef, useImperativeHandle, useId, useLayoutEffect } from 'react';
 import { jsx, jsxs, Fragment } from 'react/jsx-runtime';
 
 const GraphContext = createContext(
@@ -386,7 +386,7 @@ function calcBiQuadCoefficients(type, frequency, peakGain, Q = 0.707, sampleRate
     //   A1 = A2 = B2 = 0
     //   break
     default:
-      console.error("calcBiQuadCoefficients: unknown filter type");
+      throw new Error(`calcBiQuadCoefficients: unknown filter type "${type}"`);
   }
   return { A0, A1, A2, B1, B2 };
 }
@@ -545,8 +545,7 @@ const calcCompositeMagnitudes = (magnitudes) => {
     const totalGain = magnitudes.reduce((sum, arr) => {
       const { magnitude } = arr[i] || {};
       if (!magnitude) return sum;
-      const filterGain = 10 ** (magnitude / 20);
-      return sum + 20 * Math.log10(filterGain);
+      return sum + magnitude;
     }, 0);
     const { frequency } = magnitudes[0][i] || {};
     if (!frequency) continue;
@@ -1030,7 +1029,7 @@ const GraphGainGrid = () => {
   const strokeDasharray = "1,2";
   const gainLabelX = 4 - padding.left;
   const unitLabelY = -padding.top / 2;
-  return /* @__PURE__ */ jsxs(Fragment, { children: [
+  return /* @__PURE__ */ jsxs("g", { "aria-hidden": "true", children: [
     dBs.map((tick, index) => {
       const tickY = scaleMagnitude(
         tick,
@@ -1112,7 +1111,7 @@ const GraphFrequencyGrid = () => {
   const autoTicks = octaveTicks ? logScale.ticks(octaveTicks) : [];
   const ticks = frequencyTicks?.length ? frequencyTicks : autoTicks;
   const strokeDasharray = "1,2";
-  return /* @__PURE__ */ jsxs(Fragment, { children: [
+  return /* @__PURE__ */ jsxs("g", { "aria-hidden": "true", children: [
     (frequencyTicks?.length ? ticks : ticks.slice(1, -1)).map((tick) => {
       const tickX = logScale.x(tick);
       const width = majorTicks.includes(tick) ? lineWidth.major : lineWidth.minor;
@@ -1155,17 +1154,24 @@ const FrequencyResponseGraph = forwardRef((props, forwardedRef) => {
   const {
     width,
     height,
-    scale = {},
-    theme = {},
+    scale,
+    theme,
     style = {},
     className = "",
+    ariaLabel = "Frequency response graph",
     children
   } = props;
-  const mergedTheme = merge(defaultTheme, theme);
-  const mergedScale = merge(defaultScale, scale, {
-    arrayMerge: (_, source) => source
-    // overwrite arrays
-  });
+  const mergedTheme = useMemo(
+    () => merge(defaultTheme, theme ?? {}),
+    [theme]
+  );
+  const mergedScale = useMemo(
+    () => merge(defaultScale, scale ?? {}, {
+      arrayMerge: (_, source) => source
+      // overwrite arrays
+    }),
+    [scale]
+  );
   const {
     background: { padding }
   } = mergedTheme;
@@ -1179,7 +1185,7 @@ const FrequencyResponseGraph = forwardRef((props, forwardedRef) => {
   const outerWidth = width;
   const outerHeight = height;
   const graphTransform = `translate(${padding.left}, ${padding.top})`;
-  const graphId = `frequency-response-graph-${String(Math.random()).slice(2, 9)}`;
+  const graphId = `frequency-response-graph-${useId().replace(/:/g, "")}`;
   const clipPathId = `${graphId}-clip`;
   const resetStyles = `
   #${graphId} * {
@@ -1190,6 +1196,8 @@ const FrequencyResponseGraph = forwardRef((props, forwardedRef) => {
     {
       ref,
       id: graphId,
+      role: "group",
+      "aria-label": ariaLabel,
       className,
       viewBox: `0 0 ${outerWidth} ${outerHeight}`,
       style: {
@@ -1271,7 +1279,7 @@ const GraphInputGrid = () => {
   );
   const strokeDasharray = "1,2";
   const labelY = height + padding.bottom - 4;
-  return /* @__PURE__ */ jsxs(Fragment, { children: [
+  return /* @__PURE__ */ jsxs("g", { "aria-hidden": "true", children: [
     dBs.map((tick, index) => {
       const tickX = logScale.x(tick);
       const tickLabel = tick > 0 ? `+${tick}` : tick;
@@ -1325,17 +1333,24 @@ const DRCGraph = forwardRef(
     const {
       width,
       height,
-      scale = {},
-      theme = {},
+      scale,
+      theme,
       style = {},
       className = "",
+      ariaLabel = "Dynamic range compression graph",
       children
     } = props;
-    const mergedTheme = merge(defaultTheme, theme);
-    const mergedScale = merge(defaultScale, scale, {
-      arrayMerge: (_, source) => source
-      // overwrite arrays
-    });
+    const mergedTheme = useMemo(
+      () => merge(defaultTheme, theme ?? {}),
+      [theme]
+    );
+    const mergedScale = useMemo(
+      () => merge(defaultScale, scale ?? {}, {
+        arrayMerge: (_, source) => source
+        // overwrite arrays
+      }),
+      [scale]
+    );
     const {
       background: { padding }
     } = mergedTheme;
@@ -1349,7 +1364,7 @@ const DRCGraph = forwardRef(
     const outerWidth = width;
     const outerHeight = height;
     const graphTransform = `translate(${padding.left}, ${padding.top})`;
-    const graphId = `drc-graph-${String(Math.random()).slice(2, 9)}`;
+    const graphId = `drc-graph-${useId().replace(/:/g, "")}`;
     const clipPathId = `${graphId}-clip`;
     const resetStyles = `
   #${graphId} * {
@@ -1360,6 +1375,8 @@ const DRCGraph = forwardRef(
       {
         ref,
         id: graphId,
+        role: "group",
+        "aria-label": ariaLabel,
         className,
         viewBox: `0 0 ${outerWidth} ${outerHeight}`,
         style: {
@@ -1464,6 +1481,7 @@ const FrequencyResponseCurve = ({
   return /* @__PURE__ */ jsx(
     "path",
     {
+      "aria-hidden": "true",
       d: animate ? fromPath : currentPath,
       stroke: curveColor,
       strokeWidth: curveWidth,
@@ -2168,45 +2186,55 @@ const FilterPoint = ({
     labelFontFamily = "dsssp";
     labelStyle = getIconStyles(type, filterGain);
   }
-  return /* @__PURE__ */ jsxs(Fragment, { children: [
-    /* @__PURE__ */ jsx(
-      "circle",
-      {
-        ref: circleRef,
-        cx: x,
-        cy: y,
-        r: radius || point.radius,
-        fill: fillColor,
-        fillOpacity,
-        stroke: strokeColor,
-        strokeWidth,
-        onMouseEnter: handleMouseEnter,
-        onMouseLeave: handleMouseLeave,
-        onMouseDown: (e) => dragStart(e),
-        onContextMenu: (e) => e.preventDefault(),
-        onTouchStart: (e) => dragStart(e),
-        onDoubleClick: handleDoubleClick,
-        style: { cursor: "pointer", pointerEvents: "auto", ...style },
-        className
-      }
-    ),
-    Boolean(label) && /* @__PURE__ */ jsx(
-      "text",
-      {
-        ref: labelRef,
-        x,
-        y,
-        textAnchor: "middle",
-        dominantBaseline: "central",
-        fill: labelColor,
-        fontSize: labelFontSize,
-        fontFamily: labelFontFamily,
-        style: { ...labelStyle },
-        onDoubleClick: handleDoubleClick,
-        dangerouslySetInnerHTML: { __html: label }
-      }
-    )
-  ] });
+  const freqText = filterFreq >= 1e3 ? `${stripTail(filterFreq / 1e3)} kHz` : `${Math.round(filterFreq)} Hz`;
+  const ariaLabel = passFilter ? `${type} filter, ${freqText}, Q ${filterQ}` : `${type} filter, ${freqText}, ${filterGain > 0 ? "+" : ""}${filterGain} dB, Q ${filterQ}`;
+  return /* @__PURE__ */ jsxs(
+    "g",
+    {
+      role: "img",
+      "aria-label": ariaLabel,
+      children: [
+        /* @__PURE__ */ jsx(
+          "circle",
+          {
+            ref: circleRef,
+            cx: x,
+            cy: y,
+            r: radius || point.radius,
+            fill: fillColor,
+            fillOpacity,
+            stroke: strokeColor,
+            strokeWidth,
+            onMouseEnter: handleMouseEnter,
+            onMouseLeave: handleMouseLeave,
+            onMouseDown: (e) => dragStart(e),
+            onContextMenu: (e) => e.preventDefault(),
+            onTouchStart: (e) => dragStart(e),
+            onDoubleClick: handleDoubleClick,
+            style: { cursor: "pointer", pointerEvents: "auto", ...style },
+            className
+          }
+        ),
+        Boolean(label) && /* @__PURE__ */ jsx(
+          "text",
+          {
+            ref: labelRef,
+            "aria-hidden": "true",
+            x,
+            y,
+            textAnchor: "middle",
+            dominantBaseline: "central",
+            fill: labelColor,
+            fontSize: labelFontSize,
+            fontFamily: labelFontFamily,
+            style: { ...labelStyle },
+            onDoubleClick: handleDoubleClick,
+            ...showIcon ? { dangerouslySetInnerHTML: { __html: label } } : { children: label }
+          }
+        )
+      ]
+    }
+  );
 };
 
 const PointerTracker = ({
@@ -2323,7 +2351,7 @@ const PointerTracker = ({
     setTrackMouse(true);
   }, []);
   if (!trackMouse) return null;
-  return /* @__PURE__ */ jsxs(React.Fragment, { children: [
+  return /* @__PURE__ */ jsxs("g", { "aria-hidden": "true", children: [
     /* @__PURE__ */ jsx(
       "rect",
       {

@@ -1,7 +1,9 @@
 import type React from 'react'
 import {
   forwardRef,
+  useId,
   useImperativeHandle,
+  useMemo,
   useRef,
   type CSSProperties
 } from 'react'
@@ -62,6 +64,11 @@ export type FrequencyResponseGraphProps = {
    * Additional inline styles to apply to the graph container
    */
   style?: CSSProperties
+  /**
+   * Accessible label announced for the graph by screen readers.
+   * @default 'Frequency response graph'
+   */
+  ariaLabel?: string
 }
 
 /**
@@ -80,16 +87,24 @@ export const FrequencyResponseGraph = forwardRef<
   const {
     width,
     height,
-    scale = {},
-    theme = {},
+    scale,
+    theme,
     style = {},
     className = '',
+    ariaLabel = 'Frequency response graph',
     children
   } = props
-  const mergedTheme: GraphTheme = merge(defaultTheme, theme as GraphTheme)
-  const mergedScale: GraphScale = merge(defaultScale, scale, {
-    arrayMerge: (_, source) => source // overwrite arrays
-  })
+  const mergedTheme: GraphTheme = useMemo(
+    () => merge(defaultTheme, (theme ?? {}) as GraphTheme),
+    [theme]
+  )
+  const mergedScale: GraphScale = useMemo(
+    () =>
+      merge(defaultScale, scale ?? {}, {
+        arrayMerge: (_, source) => source // overwrite arrays
+      }),
+    [scale]
+  )
   const {
     background: { padding }
   } = mergedTheme
@@ -112,7 +127,7 @@ export const FrequencyResponseGraph = forwardRef<
   const outerHeight = height
   const graphTransform = `translate(${padding.left}, ${padding.top})`
 
-  const graphId = `frequency-response-graph-${String(Math.random()).slice(2, 9)}`
+  const graphId = `frequency-response-graph-${useId().replace(/:/g, '')}`
   const clipPathId = `${graphId}-clip`
   const resetStyles = `
   #${graphId} * {
@@ -123,6 +138,8 @@ export const FrequencyResponseGraph = forwardRef<
     <svg
       ref={ref}
       id={graphId}
+      role="group"
+      aria-label={ariaLabel}
       className={className}
       viewBox={`0 0 ${outerWidth} ${outerHeight}`}
       style={{

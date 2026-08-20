@@ -13,7 +13,9 @@ const maxResponseDelta = (type: FilterType, lowQ: number, highQ: number) => {
 
   return Math.max(
     ...probeFrequencies.map((frequency) =>
-      Math.abs(responseAt(type, highQ, frequency) - responseAt(type, lowQ, frequency))
+      Math.abs(
+        responseAt(type, highQ, frequency) - responseAt(type, lowQ, frequency)
+      )
     )
   )
 }
@@ -33,5 +35,13 @@ describe('shelf filter Q', () => {
     shelfTypes.forEach((type) => {
       expect(maxResponseDelta(type, 0.5, 2)).toBeCloseTo(0, 6)
     })
+  })
+})
+
+describe('filter validation', () => {
+  it('throws when given an unknown filter type', () => {
+    expect(() =>
+      calcBiQuadCoefficients('UNKNOWN' as FilterType, 1000, 0, 1, 44100)
+    ).toThrow('calcBiQuadCoefficients: unknown filter type "UNKNOWN"')
   })
 })

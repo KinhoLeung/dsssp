@@ -1,7 +1,9 @@
 import type React from 'react'
 import {
   forwardRef,
+  useId,
   useImperativeHandle,
+  useMemo,
   useRef,
   type CSSProperties
 } from 'react'
@@ -63,6 +65,11 @@ export type DRCGraphProps = {
    * Additional inline styles to apply to the graph container
    */
   style?: CSSProperties
+  /**
+   * Accessible label announced for the graph by screen readers.
+   * @default 'Dynamic range compression graph'
+   */
+  ariaLabel?: string
 }
 
 /**
@@ -77,17 +84,25 @@ export const DRCGraph = forwardRef<SVGSVGElement, DRCGraphProps>(
     const {
       width,
       height,
-      scale = {},
-      theme = {},
+      scale,
+      theme,
       style = {},
       className = '',
+      ariaLabel = 'Dynamic range compression graph',
       children
     } = props
 
-    const mergedTheme: GraphTheme = merge(defaultTheme, theme as GraphTheme)
-    const mergedScale: GraphScale = merge(defaultScale, scale, {
-      arrayMerge: (_, source) => source // overwrite arrays
-    })
+    const mergedTheme: GraphTheme = useMemo(
+      () => merge(defaultTheme, (theme ?? {}) as GraphTheme),
+      [theme]
+    )
+    const mergedScale: GraphScale = useMemo(
+      () =>
+        merge(defaultScale, scale ?? {}, {
+          arrayMerge: (_, source) => source // overwrite arrays
+        }),
+      [scale]
+    )
     const {
       background: { padding }
     } = mergedTheme
@@ -109,7 +124,7 @@ export const DRCGraph = forwardRef<SVGSVGElement, DRCGraphProps>(
     const outerHeight = height
     const graphTransform = `translate(${padding.left}, ${padding.top})`
 
-    const graphId = `drc-graph-${String(Math.random()).slice(2, 9)}`
+    const graphId = `drc-graph-${useId().replace(/:/g, '')}`
     const clipPathId = `${graphId}-clip`
     const resetStyles = `
   #${graphId} * {
@@ -120,6 +135,8 @@ export const DRCGraph = forwardRef<SVGSVGElement, DRCGraphProps>(
       <svg
         ref={ref}
         id={graphId}
+        role="group"
+        aria-label={ariaLabel}
         className={className}
         viewBox={`0 0 ${outerWidth} ${outerHeight}`}
         style={{

@@ -44,7 +44,7 @@ export const GraphInputGrid = () => {
   const labelY = height + padding.bottom - 4
 
   return (
-    <>
+    <g aria-hidden="true">
       {dBs.map((tick, index) => {
         const tickX = logScale.x(tick)
         const tickLabel = tick > 0 ? `+${tick}` : tick
@@ -87,6 +87,6 @@ export const GraphInputGrid = () => {
           {...(dotted ? { strokeDasharray } : {})}
         />
       )}
-    </>
+    </g>
   )
 }

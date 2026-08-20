@@ -640,8 +640,19 @@ export const FilterPoint = ({
     labelStyle = getIconStyles(type, filterGain)
   }
 
+  const freqText =
+    filterFreq >= 1000
+      ? `${stripTail(filterFreq / 1000)} kHz`
+      : `${Math.round(filterFreq)} Hz`
+  const ariaLabel = passFilter
+    ? `${type} filter, ${freqText}, Q ${filterQ}`
+    : `${type} filter, ${freqText}, ${filterGain > 0 ? '+' : ''}${filterGain} dB, Q ${filterQ}`
+
   return (
-    <>
+    <g
+      role="img"
+      aria-label={ariaLabel}
+    >
       <circle
         ref={circleRef}
         cx={x}
@@ -663,6 +674,7 @@ export const FilterPoint = ({
       {Boolean(label) && (
         <text
           ref={labelRef}
+          aria-hidden="true"
           x={x}
           y={y}
           textAnchor="middle"
@@ -672,9 +684,11 @@ export const FilterPoint = ({
           fontFamily={labelFontFamily}
           style={{ ...labelStyle }}
           onDoubleClick={handleDoubleClick}
-          dangerouslySetInnerHTML={{ __html: label }}
+          {...(showIcon
+            ? { dangerouslySetInnerHTML: { __html: label } }
+            : { children: label })}
         />
       )}
-    </>
+    </g>
   )
 }

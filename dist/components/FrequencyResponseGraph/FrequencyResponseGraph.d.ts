@@ -37,6 +37,11 @@ export type FrequencyResponseGraphProps = {
      * Additional inline styles to apply to the graph container
      */
     style?: CSSProperties;
+    /**
+     * Accessible label announced for the graph by screen readers.
+     * @default 'Frequency response graph'
+     */
+    ariaLabel?: string;
 };
 /**
  * This component renders a frequency response graph with customizable dimensions, scaling and theming.

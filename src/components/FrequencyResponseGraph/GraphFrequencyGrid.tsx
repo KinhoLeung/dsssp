@@ -19,7 +19,7 @@ export const GraphFrequencyGrid = () => {
   const strokeDasharray = '1,2'
 
   return (
-    <>
+    <g aria-hidden="true">
       {(frequencyTicks?.length ? ticks : ticks.slice(1, -1)).map((tick) => {
         const tickX = logScale.x(tick)
 
@@ -57,6 +57,6 @@ export const GraphFrequencyGrid = () => {
           </text>
         )
       })}
-    </>
+    </g>
   )
 }

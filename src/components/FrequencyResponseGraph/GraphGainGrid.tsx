@@ -52,7 +52,7 @@ export const GraphGainGrid = () => {
   const unitLabelY = -padding.top / 2
 
   return (
-    <>
+    <g aria-hidden="true">
       {dBs.map((tick, index) => {
         const tickY = scaleMagnitude(
           tick,
@@ -113,6 +113,6 @@ export const GraphGainGrid = () => {
           dB
         </text>
       )}
-    </>
+    </g>
   )
 }

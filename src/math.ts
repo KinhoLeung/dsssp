@@ -151,19 +151,31 @@ export function calcBiQuadCoefficients(
     case 'LOWSHELF2':
       norm =
         1 /
-        (shelfA + 1 + (shelfA - 1) * cosOmega + 2 * Math.sqrt(shelfA) * shelfAlpha)
+        (shelfA +
+          1 +
+          (shelfA - 1) * cosOmega +
+          2 * Math.sqrt(shelfA) * shelfAlpha)
       A0 =
         shelfA *
-        (shelfA + 1 - (shelfA - 1) * cosOmega + 2 * Math.sqrt(shelfA) * shelfAlpha) *
+        (shelfA +
+          1 -
+          (shelfA - 1) * cosOmega +
+          2 * Math.sqrt(shelfA) * shelfAlpha) *
         norm
       A1 = 2 * shelfA * (shelfA - 1 - (shelfA + 1) * cosOmega) * norm
       A2 =
         shelfA *
-        (shelfA + 1 - (shelfA - 1) * cosOmega - 2 * Math.sqrt(shelfA) * shelfAlpha) *
+        (shelfA +
+          1 -
+          (shelfA - 1) * cosOmega -
+          2 * Math.sqrt(shelfA) * shelfAlpha) *
         norm
       B1 = -2 * (shelfA - 1 + (shelfA + 1) * cosOmega) * norm
       B2 =
-        (shelfA + 1 + (shelfA - 1) * cosOmega - 2 * Math.sqrt(shelfA) * shelfAlpha) *
+        (shelfA +
+          1 +
+          (shelfA - 1) * cosOmega -
+          2 * Math.sqrt(shelfA) * shelfAlpha) *
         norm
       break
 
@@ -187,19 +199,31 @@ export function calcBiQuadCoefficients(
     case 'HIGHSHELF2':
       norm =
         1 /
-        (shelfA + 1 - (shelfA - 1) * cosOmega + 2 * Math.sqrt(shelfA) * shelfAlpha)
+        (shelfA +
+          1 -
+          (shelfA - 1) * cosOmega +
+          2 * Math.sqrt(shelfA) * shelfAlpha)
       A0 =
         shelfA *
-        (shelfA + 1 + (shelfA - 1) * cosOmega + 2 * Math.sqrt(shelfA) * shelfAlpha) *
+        (shelfA +
+          1 +
+          (shelfA - 1) * cosOmega +
+          2 * Math.sqrt(shelfA) * shelfAlpha) *
         norm
       A1 = -2 * shelfA * (shelfA - 1 + (shelfA + 1) * cosOmega) * norm
       A2 =
         shelfA *
-        (shelfA + 1 + (shelfA - 1) * cosOmega - 2 * Math.sqrt(shelfA) * shelfAlpha) *
+        (shelfA +
+          1 +
+          (shelfA - 1) * cosOmega -
+          2 * Math.sqrt(shelfA) * shelfAlpha) *
         norm
       B1 = 2 * (shelfA - 1 - (shelfA + 1) * cosOmega) * norm
       B2 =
-        (shelfA + 1 - (shelfA - 1) * cosOmega - 2 * Math.sqrt(shelfA) * shelfAlpha) *
+        (shelfA +
+          1 -
+          (shelfA - 1) * cosOmega -
+          2 * Math.sqrt(shelfA) * shelfAlpha) *
         norm
       break
 
@@ -275,7 +299,7 @@ export function calcBiQuadCoefficients(
     //   A1 = A2 = B2 = 0
     //   break
     default:
-      console.error('calcBiQuadCoefficients: unknown filter type')
+      throw new Error(`calcBiQuadCoefficients: unknown filter type "${type}"`)
   }
   return { A0, A1, A2, B1, B2 }
 }
@@ -536,9 +560,7 @@ export const calcCompositeMagnitudes = (magnitudes: Magnitude[][]) => {
     const totalGain = magnitudes.reduce((sum, arr) => {
       const { magnitude } = arr[i] || {}
       if (!magnitude) return sum
-      const filterGain = 10 ** (magnitude / 20)
-      //let gain = filterGain / Math.sqrt(1 + magnitudes[0][i].frequency ** 2);
-      return sum + 20 * Math.log10(filterGain)
+      return sum + magnitude
     }, 0)
 
     const { frequency } = magnitudes[0][i] || {}

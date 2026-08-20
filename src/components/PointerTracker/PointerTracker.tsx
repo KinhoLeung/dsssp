@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 
 import { calcFrequency, calcMagnitude, fastFloor } from '../../math'
 import { getPointerPosition } from '../../utils'
@@ -171,7 +171,7 @@ export const PointerTracker = ({
   if (!trackMouse) return null
 
   return (
-    <React.Fragment>
+    <g aria-hidden="true">
       <rect
         width={freqWidth + 6}
         height={fontSizePadding}
@@ -231,6 +231,6 @@ export const PointerTracker = ({
         strokeDasharray={strokeDasharray}
         strokeLinecap="round"
       />
-    </React.Fragment>
+    </g>
   )
 }

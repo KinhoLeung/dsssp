@@ -37,6 +37,11 @@ export type DRCGraphProps = {
      * Additional inline styles to apply to the graph container
      */
     style?: CSSProperties;
+    /**
+     * Accessible label announced for the graph by screen readers.
+     * @default 'Dynamic range compression graph'
+     */
+    ariaLabel?: string;
 };
 /**
  * Renders a dynamic range (input/output) graph for DRC curves.
