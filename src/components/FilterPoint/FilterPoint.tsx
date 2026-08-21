@@ -325,6 +325,8 @@ export const FilterPoint = ({
 
   const [hovered, setHovered] = useState(false)
   const [dragging, setDragging] = useState(false)
+  const draggingRef = useRef(false)
+  const pendingLeaveRef = useRef(false)
 
   const [zeroGain, passFilter, zeroQ] = useMemo(
     () => [
@@ -503,6 +505,7 @@ export const FilterPoint = ({
     circleEl.removeEventListener('touchend', dragEnd)
     circleEl.removeEventListener('touchcancel', dragEnd)
 
+    draggingRef.current = false
     setDragging(false)
     onChange?.({
       index,
@@ -512,6 +515,11 @@ export const FilterPoint = ({
       ended: true
     })
     onDrag?.(false)
+
+    if (pendingLeaveRef.current) {
+      pendingLeaveRef.current = false
+      onLeave?.({ ...filter, index })
+    }
   }
 
   const dragStart = (e: MouseEvent | TouchEvent) => {
@@ -525,6 +533,8 @@ export const FilterPoint = ({
     const circleEl = circleRef.current
     if (!svg || !circleEl) return
 
+    draggingRef.current = true
+    pendingLeaveRef.current = false
     setDragging(true)
     const { x, y } = getGraphPointer(e)
 
@@ -549,12 +559,19 @@ export const FilterPoint = ({
   }
 
   const handleMouseEnter = () => {
+    pendingLeaveRef.current = false
     setHovered(true)
     onEnter?.({ ...filter, index })
   }
 
   const handleMouseLeave = () => {
     setHovered(false)
+
+    if (draggingRef.current) {
+      pendingLeaveRef.current = true
+      return
+    }
+
     onLeave?.({ ...filter, index })
   }
 

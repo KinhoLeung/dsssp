@@ -153,3 +153,71 @@ describe('FilterPoint Q interactions', () => {
     })
   })
 })
+
+describe('FilterPoint hover while dragging', () => {
+  it('delays onLeave until a drag that moved outside ends', () => {
+    const onEnter = vi.fn()
+    const onLeave = vi.fn()
+    const onDrag = vi.fn()
+    const filter: GraphFilter = { type: 'PEAK', freq: 1000, gain: 0, q: 1 }
+
+    const { container } = render(
+      <FrequencyResponseGraph
+        width={800}
+        height={400}
+      >
+        <FilterPoint
+          filter={filter}
+          onEnter={onEnter}
+          onLeave={onLeave}
+          onDrag={onDrag}
+        />
+      </FrequencyResponseGraph>
+    )
+
+    const svg = container.querySelector('svg')
+    const circle = container.querySelector('circle')
+    expect(svg).not.toBeNull()
+    expect(circle).not.toBeNull()
+
+    fireEvent.mouseEnter(circle!)
+    fireEvent.mouseDown(circle!, { button: 0, clientX: 100, clientY: 100 })
+    fireEvent.mouseLeave(circle!)
+
+    expect(onEnter).toHaveBeenCalledTimes(1)
+    expect(onDrag).toHaveBeenLastCalledWith(true)
+    expect(onLeave).not.toHaveBeenCalled()
+
+    fireEvent.mouseMove(svg!, { clientX: 200, clientY: 100 })
+    expect(onLeave).not.toHaveBeenCalled()
+
+    fireEvent.mouseUp(svg!, { clientX: 200, clientY: 100 })
+    expect(onDrag).toHaveBeenLastCalledWith(false)
+    expect(onLeave).toHaveBeenCalledTimes(1)
+  })
+
+  it('calls onLeave immediately when not dragging', () => {
+    const onLeave = vi.fn()
+    const filter: GraphFilter = { type: 'PEAK', freq: 1000, gain: 0, q: 1 }
+
+    const { container } = render(
+      <FrequencyResponseGraph
+        width={800}
+        height={400}
+      >
+        <FilterPoint
+          filter={filter}
+          onLeave={onLeave}
+        />
+      </FrequencyResponseGraph>
+    )
+
+    const circle = container.querySelector('circle')
+    expect(circle).not.toBeNull()
+
+    fireEvent.mouseEnter(circle!)
+    fireEvent.mouseLeave(circle!)
+
+    expect(onLeave).toHaveBeenCalledTimes(1)
+  })
+})

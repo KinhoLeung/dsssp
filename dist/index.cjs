@@ -1512,6 +1512,8 @@ var FilterPoint = ({ filter, index = -1, dragX = true, dragY = true, wheelQ = tr
 	const labelRef = (0, react.useRef)(null);
 	const [hovered, setHovered] = (0, react.useState)(false);
 	const [dragging, setDragging] = (0, react.useState)(false);
+	const draggingRef = (0, react.useRef)(false);
+	const pendingLeaveRef = (0, react.useRef)(false);
 	const [zeroGain, passFilter, zeroQ] = (0, react.useMemo)(() => [
 		getZeroGain(type),
 		type.includes("PASS") || type === "NOTCH",
@@ -1646,6 +1648,7 @@ var FilterPoint = ({ filter, index = -1, dragX = true, dragY = true, wheelQ = tr
 		circleEl.removeEventListener("touchmove", dragMove);
 		circleEl.removeEventListener("touchend", dragEnd);
 		circleEl.removeEventListener("touchcancel", dragEnd);
+		draggingRef.current = false;
 		setDragging(false);
 		onChange?.({
 			index,
@@ -1655,6 +1658,13 @@ var FilterPoint = ({ filter, index = -1, dragX = true, dragY = true, wheelQ = tr
 			ended: true
 		});
 		onDrag?.(false);
+		if (pendingLeaveRef.current) {
+			pendingLeaveRef.current = false;
+			onLeave?.({
+				...filter,
+				index
+			});
+		}
 	};
 	const dragStart = (e) => {
 		e.preventDefault();
@@ -1666,6 +1676,8 @@ var FilterPoint = ({ filter, index = -1, dragX = true, dragY = true, wheelQ = tr
 		const svg = svgRef.current;
 		const circleEl = circleRef.current;
 		if (!svg || !circleEl) return;
+		draggingRef.current = true;
+		pendingLeaveRef.current = false;
 		setDragging(true);
 		const { x, y } = getGraphPointer(e);
 		offset = {
@@ -1682,6 +1694,7 @@ var FilterPoint = ({ filter, index = -1, dragX = true, dragY = true, wheelQ = tr
 		onDrag?.(true);
 	};
 	const handleMouseEnter = () => {
+		pendingLeaveRef.current = false;
 		setHovered(true);
 		onEnter?.({
 			...filter,
@@ -1690,6 +1703,10 @@ var FilterPoint = ({ filter, index = -1, dragX = true, dragY = true, wheelQ = tr
 	};
 	const handleMouseLeave = () => {
 		setHovered(false);
+		if (draggingRef.current) {
+			pendingLeaveRef.current = true;
+			return;
+		}
 		onLeave?.({
 			...filter,
 			index
@@ -1930,25 +1947,20 @@ var PointerTracker = (props) => {
 		gain: gainLabel
 	};
 	if (!visible) return null;
-	const freqRectWidth = freqWidth + 6;
-	const gainRectWidth = gainWidth + 6;
-	const freqRectX = limitRange(pointer.x - freqWidth / 2 - 3, 0, Math.max(0, width - freqRectWidth));
-	const freqRectY = Math.max(0, height - fontSizePadding - 1);
-	const gainRectY = limitRange(pointer.y - fontSizePadding / 2, 0, Math.max(0, height - fontSizePadding));
 	return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("g", {
 		"aria-hidden": "true",
 		children: [
 			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("rect", {
-				width: freqRectWidth,
+				width: freqWidth + 6,
 				height: fontSizePadding,
 				fill: fillColor,
 				stroke: strokeColor,
-				x: freqRectX,
-				y: freqRectY
+				x: pointer.x - freqWidth / 2 - 3,
+				y: height - fontSizePadding - 1
 			}),
 			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("text", {
 				ref: freqLabelRef,
-				x: freqRectX + 3,
+				x: pointer.x - freqWidth / 2,
 				y: height - 4,
 				fill: color,
 				fontSize,
@@ -1956,17 +1968,17 @@ var PointerTracker = (props) => {
 				children: pointer.freq
 			}),
 			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("rect", {
-				width: gainRectWidth,
+				width: gainWidth + 6,
 				height: fontSizePadding,
 				fill: fillColor,
 				stroke: strokeColor,
 				x: .5,
-				y: gainRectY
+				y: pointer.y - fontSizePadding / 2
 			}),
 			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("text", {
 				ref: gainLabelRef,
 				x: 3,
-				y: gainRectY + fontSizePadding - 4,
+				y: pointer.y + fontSizePadding / 2 - 4,
 				fill: color,
 				fontSize,
 				fontFamily,
@@ -1986,7 +1998,7 @@ var PointerTracker = (props) => {
 				x1: pointer.x,
 				x2: pointer.x,
 				y1: 0,
-				y2: Math.max(0, height - fontSizePadding - 1),
+				y2: height - 14,
 				stroke: strokeColor,
 				strokeWidth,
 				strokeDasharray,

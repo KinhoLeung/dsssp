@@ -258,33 +258,19 @@ export const PointerTracker = (props: PointerTrackerProps) => {
 
   if (!visible) return null
 
-  const freqRectWidth = freqWidth + 6
-  const gainRectWidth = gainWidth + 6
-  const freqRectX = limitRange(
-    pointer.x - freqWidth / 2 - 3,
-    0,
-    Math.max(0, width - freqRectWidth)
-  )
-  const freqRectY = Math.max(0, height - fontSizePadding - 1)
-  const gainRectY = limitRange(
-    pointer.y - fontSizePadding / 2,
-    0,
-    Math.max(0, height - fontSizePadding)
-  )
-
   return (
     <g aria-hidden="true">
       <rect
-        width={freqRectWidth}
+        width={freqWidth + 6}
         height={fontSizePadding}
         fill={fillColor}
         stroke={strokeColor}
-        x={freqRectX}
-        y={freqRectY}
+        x={pointer.x - freqWidth / 2 - 3}
+        y={height - fontSizePadding - 1}
       ></rect>
       <text
         ref={freqLabelRef}
-        x={freqRectX + 3}
+        x={pointer.x - freqWidth / 2}
         y={height - 4}
         fill={color}
         fontSize={fontSize}
@@ -294,17 +280,17 @@ export const PointerTracker = (props: PointerTrackerProps) => {
       </text>
 
       <rect
-        width={gainRectWidth}
+        width={gainWidth + 6}
         height={fontSizePadding}
         fill={fillColor}
         stroke={strokeColor}
         x={0.5}
-        y={gainRectY}
+        y={pointer.y - fontSizePadding / 2}
       ></rect>
       <text
         ref={gainLabelRef}
         x={3}
-        y={gainRectY + fontSizePadding - 4}
+        y={pointer.y + fontSizePadding / 2 - 4}
         fill={color}
         fontSize={fontSize}
         fontFamily={fontFamily}
@@ -327,7 +313,7 @@ export const PointerTracker = (props: PointerTrackerProps) => {
         x1={pointer.x}
         x2={pointer.x}
         y1={0}
-        y2={Math.max(0, height - fontSizePadding - 1)}
+        y2={height - 14}
         stroke={strokeColor}
         strokeWidth={strokeWidth}
         strokeDasharray={strokeDasharray}
