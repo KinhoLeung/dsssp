@@ -22,6 +22,7 @@ const meta = {
   },
   tags: ['autodocs'],
   argTypes: {
+    filter: { control: 'object' },
     lineWidth: { control: { type: 'range', min: 0.1, max: 2, step: 0.1 } },
     lineColor: { control: { type: 'color' } },
     backgroundColor: { control: { type: 'color' } },
@@ -43,5 +44,17 @@ const defaultProps = {
 export const Default: Story = {
   args: {
     ...defaultProps
+  }
+}
+
+export const FilterPoint: Story = {
+  args: {
+    ...defaultProps,
+    filter: {
+      type: 'PEAK',
+      freq: 682,
+      gain: -6.9,
+      q: 1
+    }
   }
 }

@@ -1,10 +1,23 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 
-import { calcFrequency, calcMagnitude, fastFloor } from '../../math'
+import {
+  calcFrequency,
+  calcMagnitude,
+  fastFloor,
+  getCenterLine,
+  limitRange,
+  scaleMagnitude
+} from '../../math'
+import { type GraphFilter } from '../../types'
 import { getPointerPosition } from '../../utils'
 import { useGraph } from '../..'
 
 export type PointerTrackerProps = {
+  /**
+   * Filter point to track instead of the current pointer position.
+   * When provided, the tracker follows this EQ point and pointer listeners are disabled.
+   */
+  filter?: GraphFilter | null
   /**
    * Width of the crosshair guide lines
    * @default theme.background.tracker.lineWidth
@@ -33,21 +46,26 @@ export type PointerTrackerProps = {
 }
 
 /**
- * Displays frequency and gain values at the current pointer position.
- * Shows crosshair guides and value labels that follow the pointer.
+ * Displays frequency and gain values at the current pointer position or a
+ * provided filter point. Shows crosshair guides and value labels that follow
+ * the selected tracking target.
  **/
-export const PointerTracker = ({
-  lineWidth,
-  lineColor,
-  labelColor,
-  backgroundColor,
-  gainPrecision
-}: PointerTrackerProps) => {
+export const PointerTracker = (props: PointerTrackerProps) => {
+  const {
+    filter,
+    lineWidth,
+    lineColor,
+    labelColor,
+    backgroundColor,
+    gainPrecision
+  } = props
+  const trackFilter = 'filter' in props
   const {
     svgRef,
     width,
     height,
     padding,
+    logScale,
     scale,
     theme: {
       background: {
@@ -94,6 +112,41 @@ export const PointerTracker = ({
 
   const freqLabelRef = useRef<SVGTextElement | null>(null)
   const gainLabelRef = useRef<SVGTextElement | null>(null)
+
+  const getFilterPoint = (targetFilter: GraphFilter) => {
+    if (targetFilter.type === 'BYPASS') return null
+
+    const minX = limitRange(logScale.x(minFreq), 0, width)
+    const maxX = limitRange(logScale.x(maxFreq), 0, width)
+    const x = limitRange(logScale.x(targetFilter.freq), minX, maxX)
+    const passFilter =
+      targetFilter.type.includes('PASS') || targetFilter.type === 'NOTCH'
+    const y = passFilter
+      ? getCenterLine(gainMinForDisplay, gainMaxForDisplay, height)
+      : scaleMagnitude(
+          targetFilter.gain,
+          gainMinForDisplay,
+          gainMaxForDisplay,
+          height
+        )
+    const gain = passFilter
+      ? 0
+      : Number(
+          calcMagnitude(
+            y,
+            gainMinForDisplay,
+            gainMaxForDisplay,
+            height
+          ).toFixed(gainDigits)
+        )
+
+    return {
+      x,
+      y: limitRange(y, 0, height),
+      freq: fastFloor(targetFilter.freq),
+      gain
+    }
+  }
 
   const mouseMove = (e: MouseEvent | TouchEvent) => {
     e.preventDefault() // Prevent scrolling on touch
@@ -143,6 +196,8 @@ export const PointerTracker = ({
   const handleTouchCancel = () => setTrackMouse(false)
 
   useEffect(() => {
+    if (trackFilter) return
+
     const svg = svgRef.current
     if (!svg) return
     svg.addEventListener('mouseenter', handleMouseEnter)
@@ -162,59 +217,106 @@ export const PointerTracker = ({
       svg.removeEventListener('touchend', handleTouchEnd)
       svg.removeEventListener('touchcancel', handleTouchCancel)
     }
-  }, [svgRef.current])
+  }, [svgRef.current, trackFilter])
 
   useEffect(() => {
-    setTrackMouse(true)
-  }, [])
+    if (trackFilter) return
 
-  if (!trackMouse) return null
+    setTrackMouse(true)
+  }, [trackFilter])
+
+  useEffect(() => {
+    if (!trackFilter || !filter) return
+
+    const point = getFilterPoint(filter)
+    if (!point) return
+
+    setMouse({ x: point.x, y: point.y })
+    setFreqLabel(point.freq)
+    setGainLabel(point.gain)
+  }, [
+    filter,
+    trackFilter,
+    logScale,
+    minFreq,
+    maxFreq,
+    width,
+    height,
+    gainMinForDisplay,
+    gainMaxForDisplay,
+    gainDigits
+  ])
+
+  const point = trackFilter && filter ? getFilterPoint(filter) : null
+  const visible = trackFilter ? Boolean(point) : trackMouse
+  const pointer = point || {
+    x: mouse.x,
+    y: mouse.y,
+    freq: freqLabel,
+    gain: gainLabel
+  }
+
+  if (!visible) return null
+
+  const freqRectWidth = freqWidth + 6
+  const gainRectWidth = gainWidth + 6
+  const freqRectX = limitRange(
+    pointer.x - freqWidth / 2 - 3,
+    0,
+    Math.max(0, width - freqRectWidth)
+  )
+  const freqRectY = Math.max(0, height - fontSizePadding - 1)
+  const gainRectY = limitRange(
+    pointer.y - fontSizePadding / 2,
+    0,
+    Math.max(0, height - fontSizePadding)
+  )
 
   return (
     <g aria-hidden="true">
       <rect
-        width={freqWidth + 6}
+        width={freqRectWidth}
         height={fontSizePadding}
         fill={fillColor}
         stroke={strokeColor}
-        x={mouse.x - freqWidth / 2 - 3}
-        y={height - fontSizePadding - 1}
+        x={freqRectX}
+        y={freqRectY}
       ></rect>
       <text
         ref={freqLabelRef}
-        x={mouse.x - freqWidth / 2}
+        x={freqRectX + 3}
         y={height - 4}
         fill={color}
         fontSize={fontSize}
         fontFamily={fontFamily}
       >
-        {freqLabel}
+        {pointer.freq}
       </text>
 
       <rect
-        width={gainWidth + 6}
+        width={gainRectWidth}
         height={fontSizePadding}
         fill={fillColor}
         stroke={strokeColor}
         x={0.5}
-        y={mouse.y - 7}
+        y={gainRectY}
       ></rect>
       <text
         ref={gainLabelRef}
         x={3}
-        y={mouse.y + 3}
+        y={gainRectY + fontSizePadding - 4}
         fill={color}
         fontSize={fontSize}
         fontFamily={fontFamily}
       >
-        {gainLabel > 0 ? `+${gainLabel}` : gainLabel}
+        {pointer.gain > 0 ? `+${pointer.gain}` : pointer.gain}
       </text>
 
       <line
         x1={gainWidth + 7}
         x2={width}
-        y1={mouse.y}
-        y2={mouse.y}
+        y1={pointer.y}
+        y2={pointer.y}
         stroke={strokeColor}
         strokeWidth={strokeWidth}
         strokeDasharray={strokeDasharray}
@@ -222,10 +324,10 @@ export const PointerTracker = ({
       />
 
       <line
-        x1={mouse.x}
-        x2={mouse.x}
+        x1={pointer.x}
+        x2={pointer.x}
         y1={0}
-        y2={height - 14}
+        y2={Math.max(0, height - fontSizePadding - 1)}
         stroke={strokeColor}
         strokeWidth={strokeWidth}
         strokeDasharray={strokeDasharray}

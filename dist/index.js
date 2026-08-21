@@ -1797,11 +1797,14 @@ var FilterPoint = ({ filter, index = -1, dragX = true, dragY = true, wheelQ = tr
 //#endregion
 //#region src/components/PointerTracker/PointerTracker.tsx
 /**
-* Displays frequency and gain values at the current pointer position.
-* Shows crosshair guides and value labels that follow the pointer.
+* Displays frequency and gain values at the current pointer position or a
+* provided filter point. Shows crosshair guides and value labels that follow
+* the selected tracking target.
 **/
-var PointerTracker = ({ lineWidth, lineColor, labelColor, backgroundColor, gainPrecision }) => {
-	const { svgRef, width, height, padding, scale, theme: { background: { tracker, label: { fontSize, fontFamily } } } } = useGraph();
+var PointerTracker = (props) => {
+	const { filter, lineWidth, lineColor, labelColor, backgroundColor, gainPrecision } = props;
+	const trackFilter = "filter" in props;
+	const { svgRef, width, height, padding, logScale, scale, theme: { background: { tracker, label: { fontSize, fontFamily } } } } = useGraph();
 	const { minGain, maxGain, displayMinGain, displayMaxGain, minFreq, maxFreq, displayMinFreq, displayMaxFreq } = scale;
 	const gainMinForDisplay = typeof displayMinGain === "number" ? displayMinGain : minGain;
 	const gainMaxForDisplay = typeof displayMaxGain === "number" ? displayMaxGain : maxGain;
@@ -1825,6 +1828,21 @@ var PointerTracker = ({ lineWidth, lineColor, labelColor, backgroundColor, gainP
 	});
 	const freqLabelRef = useRef(null);
 	const gainLabelRef = useRef(null);
+	const getFilterPoint = (targetFilter) => {
+		if (targetFilter.type === "BYPASS") return null;
+		const minX = limitRange(logScale.x(minFreq), 0, width);
+		const maxX = limitRange(logScale.x(maxFreq), 0, width);
+		const x = limitRange(logScale.x(targetFilter.freq), minX, maxX);
+		const passFilter = targetFilter.type.includes("PASS") || targetFilter.type === "NOTCH";
+		const y = passFilter ? getCenterLine(gainMinForDisplay, gainMaxForDisplay, height) : scaleMagnitude(targetFilter.gain, gainMinForDisplay, gainMaxForDisplay, height);
+		const gain = passFilter ? 0 : Number(calcMagnitude(y, gainMinForDisplay, gainMaxForDisplay, height).toFixed(gainDigits));
+		return {
+			x,
+			y: limitRange(y, 0, height),
+			freq: fastFloor(targetFilter.freq),
+			gain
+		};
+	};
 	const mouseMove = (e) => {
 		e.preventDefault();
 		const { x, y } = getPointerPosition(e);
@@ -1855,6 +1873,7 @@ var PointerTracker = ({ lineWidth, lineColor, labelColor, backgroundColor, gainP
 	const handleTouchEnd = () => setTrackMouse(false);
 	const handleTouchCancel = () => setTrackMouse(false);
 	useEffect(() => {
+		if (trackFilter) return;
 		const svg = svgRef.current;
 		if (!svg) return;
 		svg.addEventListener("mouseenter", handleMouseEnter);
@@ -1873,63 +1892,99 @@ var PointerTracker = ({ lineWidth, lineColor, labelColor, backgroundColor, gainP
 			svg.removeEventListener("touchend", handleTouchEnd);
 			svg.removeEventListener("touchcancel", handleTouchCancel);
 		};
-	}, [svgRef.current]);
+	}, [svgRef.current, trackFilter]);
 	useEffect(() => {
+		if (trackFilter) return;
 		setTrackMouse(true);
-	}, []);
-	if (!trackMouse) return null;
+	}, [trackFilter]);
+	useEffect(() => {
+		if (!trackFilter || !filter) return;
+		const point = getFilterPoint(filter);
+		if (!point) return;
+		setMouse({
+			x: point.x,
+			y: point.y
+		});
+		setFreqLabel(point.freq);
+		setGainLabel(point.gain);
+	}, [
+		filter,
+		trackFilter,
+		logScale,
+		minFreq,
+		maxFreq,
+		width,
+		height,
+		gainMinForDisplay,
+		gainMaxForDisplay,
+		gainDigits
+	]);
+	const point = trackFilter && filter ? getFilterPoint(filter) : null;
+	const visible = trackFilter ? Boolean(point) : trackMouse;
+	const pointer = point || {
+		x: mouse.x,
+		y: mouse.y,
+		freq: freqLabel,
+		gain: gainLabel
+	};
+	if (!visible) return null;
+	const freqRectWidth = freqWidth + 6;
+	const gainRectWidth = gainWidth + 6;
+	const freqRectX = limitRange(pointer.x - freqWidth / 2 - 3, 0, Math.max(0, width - freqRectWidth));
+	const freqRectY = Math.max(0, height - fontSizePadding - 1);
+	const gainRectY = limitRange(pointer.y - fontSizePadding / 2, 0, Math.max(0, height - fontSizePadding));
 	return /* @__PURE__ */ jsxs("g", {
 		"aria-hidden": "true",
 		children: [
 			/* @__PURE__ */ jsx("rect", {
-				width: freqWidth + 6,
+				width: freqRectWidth,
 				height: fontSizePadding,
 				fill: fillColor,
 				stroke: strokeColor,
-				x: mouse.x - freqWidth / 2 - 3,
-				y: height - fontSizePadding - 1
+				x: freqRectX,
+				y: freqRectY
 			}),
 			/* @__PURE__ */ jsx("text", {
 				ref: freqLabelRef,
-				x: mouse.x - freqWidth / 2,
+				x: freqRectX + 3,
 				y: height - 4,
 				fill: color,
 				fontSize,
 				fontFamily,
-				children: freqLabel
+				children: pointer.freq
 			}),
 			/* @__PURE__ */ jsx("rect", {
-				width: gainWidth + 6,
+				width: gainRectWidth,
 				height: fontSizePadding,
 				fill: fillColor,
 				stroke: strokeColor,
 				x: .5,
-				y: mouse.y - 7
+				y: gainRectY
 			}),
 			/* @__PURE__ */ jsx("text", {
 				ref: gainLabelRef,
 				x: 3,
-				y: mouse.y + 3,
+				y: gainRectY + fontSizePadding - 4,
 				fill: color,
 				fontSize,
 				fontFamily,
-				children: gainLabel > 0 ? `+${gainLabel}` : gainLabel
+				children: pointer.gain > 0 ? `+${pointer.gain}` : pointer.gain
 			}),
 			/* @__PURE__ */ jsx("line", {
 				x1: gainWidth + 7,
 				x2: width,
-				y1: mouse.y,
-				y2: mouse.y,
+				y1: pointer.y,
+				y2: pointer.y,
 				stroke: strokeColor,
 				strokeWidth,
 				strokeDasharray,
 				strokeLinecap: "round"
 			}),
 			/* @__PURE__ */ jsx("line", {
-				x1: mouse.x,
-				x2: mouse.x,
+				x1: pointer.x,
+				x2: pointer.x,
 				y1: 0,
-				y2: height - 14,
+				y2: Math.max(0, height - fontSizePadding - 1),
 				stroke: strokeColor,
 				strokeWidth,
 				strokeDasharray,

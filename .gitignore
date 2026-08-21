@@ -1,3 +1,5 @@
 coverage
 node_modules
 storybook-static
+flutter/
+flutter_deom/

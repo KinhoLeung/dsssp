@@ -21,6 +21,13 @@ Install the package in your project directory with:
 npm install dsssp
 ```
 
+## Flutter port
+
+A native Flutter package is available under
+[`flutter/dsssp_flutter`](flutter/dsssp_flutter). It contains a pure Dart DSP
+port plus interactive `CustomPainter`-based EQ and DRC graphs and can be used as
+a path or Git dependency from another Flutter project.
+
 ## Documentation
 
 Visit [dsssp.io/docs](https://dsssp.io/docs/) to view the full documentation.
